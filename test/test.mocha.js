@@ -1,16 +1,62 @@
 var sv = require('../socketvat')
+var EE2 = require('eventemitter2').EventEmitter2
 var assert = require('assert')
-
-function plan(todo,cb) {
-  if (!(this instanceof plan)) return new plan(todo,cb)
-  var self = this
-  self.todo = todo
-  self.did = function(e) {if (--self.todo<=0) cb && cb(e)}
+var common = 
+{ ports:
+  [ ~~(Math.random()*50000)+10000
+  , ~~(Math.random()*50000)+10000
+  ]
+, ee2log: function(name){return function(){
+    console.log((name || '☼')+':',this.event,'→',[].slice.call(arguments))
+  }}
+, plan: function plan(todo,cb) {
+    if (!(this instanceof plan)) return new plan(todo,cb)
+    var self = this
+    self.todo = todo
+    self.did = function(e) {if (--self.todo<=0) cb && cb(e)}
+  }
+, scenario: function(opts,done) {
+    //console.log(opts)
+    var events = Object.keys(opts.events)
+    var p = common.plan(0,done)
+    events.forEach(function(i){
+      Object.keys(opts.events[i]).forEach(function(x){
+        p.todo++
+        common.serverVat.once(x,function(d){
+          // console.log('did',p.todo,this.event,d,opts.events[i][x])
+          assert.equal(d,opts.events[i][x])
+          p.did()
+        })
+      })
+    })
+    common.clientRemotes[0].remote[opts.method].apply(common.clientRemotes[0].remote,opts.args)
+  }
 }
 
 module.exports =
-{ 'simple': function(done){
-    var p = plan(10,done)
+{ api: 
+  { before: function(done){
+      var p = common.plan(2,done)
+      common.serverVat = sv()
+      //common.serverVat.onAny(common.ee2log('serverVatAny'))
+      common.serverRemotes = []
+      common.serverVat.listen(common.ports[0],function(rem,s){
+        common.serverRemotes.push({remote:rem,socket:s})
+        p.did()
+      })
+      common.clientVat = sv()
+      //common.clientVat.onAny(common.ee2log('clientVatAny'))
+      common.clientRemotes = []
+      common.clientVat.connect(common.ports[0],function(rem,s){
+        common.clientRemotes.push({remote:rem,socket:s})
+        p.did()
+      })
+    }
+  , set: function(done){common.scenario({method:'set',args:['foo','bar'],events:[{'set foo':'bar'}]},done)}
+  , get: function(done){common.scenario({method:'get',args:['foo'],events:[{'get foo':'bar'}]},done)}
+  }
+, 'simple': function(done){
+    var p = common.plan(10,done)
     var port = ~~(Math.random()*50000)+10000
     var serverVat = sv()
     serverVat.listen(port,function(r){

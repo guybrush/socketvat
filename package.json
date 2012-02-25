@@ -1,5 +1,6 @@
 { "name" : "socketvat"
 , "version" : "0.0.0"
+, "description" : "eventvat + nssocket"
 , "main" : "socketvat.js"
 , "scripts" : 
   { "test" : "node_modules/.bin/mocha test/*.mocha.js -u exports -R spec"
