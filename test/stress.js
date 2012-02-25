@@ -33,7 +33,17 @@ var _i = ~process.argv.indexOf('-i')
          : 1000
 
 console.log('--------------------------------')
-console.log({time:Date(_t).toString(),port:_p,t:_t,n:_n,i:_i})
+var startInfo = { version:require('../package.json').version
+                , time:Date().toString()
+                , port:_p }
+if (_startClients) {
+  startInfo.t = _t
+  startInfo.n = _n
+  startInfo.i = _i
+  console.log({startingClients:startInfo})
+}
+else
+  console.log({startingServer:startInfo})
 console.log('--------------------------------')
 setInterval(function(){
   console.log
