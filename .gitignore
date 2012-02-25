@@ -1,0 +1,4 @@
+_gitignore
+node_modules
+*.swp
+*.marks

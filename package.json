@@ -1,0 +1,15 @@
+{ "name" : "socketvat"
+, "version" : "0.0.0"
+, "main" : "socketvat.js"
+, "scripts" : 
+  { "test" : "node_modules/.bin/mocha test/*.mocha.js -u exports -R spec"
+  , "stress-server" : "node test/stress"
+  , "stress-clients" : "node test/stress clients"
+  }
+, "dependencies" : 
+  { "eventvat" : "~0.1.7"
+  , "nssocket" : "~0.3.7"
+  }
+, "devDependencies" :
+  { "mocha" : "~0.12.1" }
+}
