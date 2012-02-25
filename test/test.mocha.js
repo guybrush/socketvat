@@ -11,8 +11,9 @@ function plan(todo,cb) {
 module.exports =
 { 'simple': function(done){
     var p = plan(10,done)
+    var port = ~~(Math.random()*50000)+10000
     var serverVat = sv()
-    serverVat.listen(3000,function(r){
+    serverVat.listen(port,function(r){
       r.on('*',function(d){
         assert.equal(this.event[0],'data')
         assert.equal(this.event[1],'socketvat')
@@ -26,7 +27,7 @@ module.exports =
     })                              
     
     var clientVat = sv()
-    clientVat.connect(3000,function(r){
+    clientVat.connect(port,function(r){
       r.on('*',function(d){
         assert.equal(this.event[0],'data')
         assert.equal(this.event[1],'socketvat')
