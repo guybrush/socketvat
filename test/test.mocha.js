@@ -1,5 +1,7 @@
 var sv = require('../socketvat')
 var EE2 = require('eventemitter2').EventEmitter2
+var fs = require('fs')
+var path = require('path')
 var assert = require('assert')
 var common = 
 { ports:
@@ -99,6 +101,27 @@ module.exports =
     
     serverVat.set('foo','bar')
     clientVat.set('foo','bar') 
+  }
+, tls: function(done) {
+    var p = common.plan(2,done)
+    var port = ~~(Math.random()*50000)+10000
+    var fixturesPath = path.resolve(__dirname+'/../node_modules/nssocket/test/fixtures')
+    var opts = { port : port
+               , key  : fs.readFileSync(fixturesPath+'/ryans-key.pem')
+               , cert : fs.readFileSync(fixturesPath+'/ryans-cert.pem')
+               , ca   : fs.readFileSync(fixturesPath+'/ryans-csr.pem')
+               }
+    var serverVat = sv()
+    serverVat.listen(opts,function(rem,s){
+      assert.equal(s._type,'tls')
+      p.did()
+    })
+    var clientVat = sv()
+    clientVat.connect(opts,function(rem,s){
+      assert.equal(s._type,'tls')
+      p.did()
+    })
+    
   }
 }
 

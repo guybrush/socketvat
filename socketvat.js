@@ -5,7 +5,6 @@ var nss = require('nssocket')
 var ev  = require('eventvat')
 var net = require('net')
 var tls = require('tls')
-var fs  = require('fs')
 
 function socketvat(opts) {
   if (!(this instanceof socketvat)) return new socketvat(opts)
@@ -19,19 +18,95 @@ function socketvat(opts) {
 
 var p = socketvat.prototype = new ev
 
-p.listen = function(port,cb) {
-  var self = this
-  var server = nss.createServer(function(s){
-    self.initSocket(s,cb)
+p.listen = function() {
+  var args = [].slice.call(arguments)
+  var cb = typeof args[args.length-1] == 'function'
+           ? args[args.length-1]
+           : function(){}
+  var opts = {tls:{}}
+  args.forEach(function(x){
+    if (typeof x === 'string') opts.host = x
+    else if (typeof x === 'number') opts.port = x
+    else if (typeof x === 'object') {
+      if (x.__proto__ === Object.prototype) {
+        Object.keys(x).forEach(function(k){
+          switch(k) {
+            case 'port'               : opts[k]     = x[k]; break;
+            case 'host'               : opts[k]     = x[k]; break;
+            case 'key'                : opts.tls[k] = x[k]; break;
+            case 'cert'               : opts.tls[k] = x[k]; break;
+            case 'ca'                 : opts.tls[k] = x[k]; break;
+            case 'passphrase'         : opts.tls[k] = x[k]; break;
+            case 'ciphers'            : opts.tls[k] = x[k]; break;
+            case 'requestCert'        : opts.tls[k] = x[k]; break;
+            case 'rejectUnauthorized' : opts.tls[k] = x[k]; break;
+            case 'NPNProtocols'       : opts.tls[k] = x[k]; break;
+            case 'SNICallback'        : opts.tls[k] = x[k]; break;
+            case 'sessionIdContext'   : opts.tls[k] = x[k]; break;
+            default : console.error(new Error('invalid option "'+k+'"'))
+          }
+        })
+      }
+    }
   })
-  server.listen(port)
+  
+  opts.host = opts.host || '0.0.0.0'
+  if (!opts.port) throw new Error('no port defined')
+    
+  var self = this
+  var server
+  if (opts.tls.key && opts.tls.cert){
+    opts.tls.type = 'tls'
+    server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)})
+  }
+  else
+    server = nss.createServer(function(s){self.initSocket(s,cb)})
+  server.listen(opts.port,opts.host)
   return server
 }
 
-p.connect = function(port,cb) {
+p.connect = function() {
+  var args = [].slice.call(arguments)
+  var cb = typeof args[args.length-1] == 'function'
+           ? args[args.length-1]
+           : function(){}
+  var opts = {tls:{}}
+  args.forEach(function(x){
+    if (typeof x === 'string') opts.host = x
+    else if (typeof x === 'number') opts.port = x
+    else if (typeof x === 'object') {
+      if (x.__proto__ === Object.prototype) {
+        Object.keys(x).forEach(function(k){
+          switch(k) {
+            case 'port'         : opts[k]     = x[k]; break;
+            case 'host'         : opts[k]     = x[k]; break;
+            case 'key'          : opts.tls[k] = x[k]; break;
+            case 'cert'         : opts.tls[k] = x[k]; break;
+            case 'ca'           : opts.tls[k] = x[k]; break;
+            case 'passphrase'   : opts.tls[k] = x[k]; break;
+            case 'NPNProtocols' : opts.tls[k] = x[k]; break;
+            case 'servername'   : opts.tls[k] = x[k]; break;
+            case 'socket'       : opts.tls[k] = x[k]; break;
+            default : console.error(new Error('invalid option "'+k+'"'))
+          }
+        })
+      }
+    }
+  })
+  
+  opts.host = opts.host || '0.0.0.0'
+  if (!opts.port) throw new Error('no port defined')
+
   var self = this
-  var client = new nss.NsSocket()
-  client.connect(port)
+  var client
+  if (opts.tls.key && opts.tls.cert) {
+    opts.tls.type = 'tls'
+    client = new nss.NsSocket(opts.tls)
+  }
+  else
+    client = new nss.NsSocket()
+
+  client.connect(opts.port, opts.host)
   self.initSocket(client,cb)
   return client
 }
@@ -70,11 +145,11 @@ p.initSocket = function(s,cb) {
         case 'unsubscribe':
           // #TODO
           break
-        default: 
+        default:
           if (ev.prototype[method] && typeof ev.prototype[method] == 'function')
             self[method].apply(self,args)
           else
-            console.log('unknown method',method) 
+            console.log('unknown method',method)
       }
     }
   })
@@ -111,3 +186,41 @@ p.initSocket = function(s,cb) {
   })
   cb && cb(r,s)
 }
+
+
+/* * /
+
+// console.log(Object.keys(ev.prototype))
+
+var sv = socketvat
+
+var serverVat = sv()
+serverVat.listen(3000,function(r,s){
+  r.on('**',function(){
+    console.log('REMOTE CLIENT:',this.event,'→',[].slice.call(arguments))
+  })
+  r.on('error',function(){})
+  r.on('end',function(){})
+  r.set('server','x')
+})
+
+var clientVat = sv()
+clientVat.connect(3000,function(r){
+  r.on('*',function(){
+    console.log('REMOTE SERVER:',this.event,'→',[].slice.call(arguments))
+  })
+  r.set('client','y',function(err){console.log('sent the message')})
+  r.get('client')
+})
+
+serverVat.on('*',function(){
+    console.log('LOCAL SERVER:',this.event,'→',[].slice.call(arguments))
+  })
+clientVat.on('*',function(){
+    console.log('LOCAL CLIENT:',this.event,'→',[].slice.call(arguments))
+  })
+
+serverVat.set('foo','bar')
+clientVat.set('foo','bar')
+
+/* */
