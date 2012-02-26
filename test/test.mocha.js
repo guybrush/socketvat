@@ -10,6 +10,10 @@ var common =
     console.log((name || '☼')+':',this.event,'→',[].slice.call(arguments))
   }}
 , vat: ev()
+, timeTrigger: function(){
+    common.timeTriggered = ~~(Date.now()/1000)
+    return common.timeTriggered
+  }
 , plan: function plan(todo,cb) {
     if (!(this instanceof plan)) return new plan(todo,cb)
     var self = this
@@ -27,53 +31,123 @@ var common =
 //  , 'lrange', 'lrem', 'lset', 'ltrim', 'rpop', 'rpoplpush', 'rpush', 'rpushx'
 //  , 'dump', 'swap', 'findin' ]
 var remoteSamples =                                        
-[ { name:'del'       , methods:[['set','foo','bar']        
-                               ,['del','foo']]             , events:[['del','foo']]            }
-// die                                                     
-, { name:'exists'    , methods:[['set','foo','bar']        
-                               ,['exists','foo']           
-                               ,['exists','bar']]          , events:[['exists foo',true]
-                                                                    ,['exists bar',false]]     }
-, { name:'expire'    , methods:[['set','foo','bar']                                            
-                               ,['expire','foo',100]]      , events:[['expire','foo',100]]     }
-// expireat                                                                                    
-, { name:'keys'      , methods:[['set','foo','bar']                                            
-                               ,['keys','.*']]             , events:[['keys',['foo'],/.*/]]    }
+[ { name:'del'       , methods:[['set','foo','bar']          
+                               ,['del','foo']]               , events:[['del','foo']]             }
+// die                                                                                            
+, { name:'exists'    , methods:[['set','foo','bar']                                               
+                               ,['exists','foo']                                                  
+                               ,['exists','bar']]            , events:[['exists foo',true]        
+                                                                      ,['exists bar',false]]      }
+, { name:'expire'    , methods:[['set','foo','bar']                                               
+                               ,['expire','foo',100]]        , events:[['expire','foo',100]]      }
+, { name:'expireat'  , methods:[['set','foo','bar']                                               
+                               ,['expireat','foo'                                                 
+                                ,common.timeTrigger()+100]]  , events:[['expireat','foo',common.timeTriggered+100]]      }                                                                                   
+, { name:'keys'      , methods:[['set','foo','bar']                                               
+                               ,['keys','.*']]               , events:[['keys',['foo'],/.*/]]     }
 // not sure about move..
 // , { name:'move'      , methods:[['foo','bar']                                                  
 //                                ,['move','foo',common.vat]] , events:[['move','foo',common.vat]       
 //                                                                     ,['move foo',common.vat]]      }                                                                                        
 // object - not implemented 
-, { name:'persist'   , methods:[['set','foo','bar']                                                  
-                               ,['persist','foo']]         , events:[['persist foo']        
-                                                                    ,['persist foo',null]]     } 
-, { name:'randomkey' , methods:[['set','a',1]                                                  
-                               ,['set','b',2]                                                  
-                               ,['set','c',3]                                                  
-                               ,['randomkey']]             , eventsOr:[['randomkey','a']       
-                                                                      ,['randomkey','b']       
-                                                                      ,['randomkey','c']]      }
-, { name:'rename'    , methods:[['set','a',1]                                                  
-                               ,['rename','a','b']]        , events:[['rename','a','b']        
-                                                                    ,['rename a','b']]         }   
-, { name:'hdel'      , methods:[['hset','hash','a',1]                                          
-                               ,['hdel','hash','a']]       , events:[['hdel','hash','a']       
-                                                                    ,['hdel hash','a']]        }
-, { name:'hset'      , methods:[['hset','hash','a',1]]     , events:[['hset','hash','a',1]     
-                                                                    ,['hset hash','a',1]]      }
-, { name:'lset'      , methods:[['rpush','mylist','foo']
-                               ,['lset','mylist',0,'one']] , events:[['lset','mylist',0,'one']
-                                                                    ,['lset mylist',0,'one']]  }
-, { name:'set'       , methods:[['set','foo','bar']]       , events:[['set','foo','bar']]      }
-, { name:'get'       , methods:[['set','foo','bar']                                            
-                               ,['get','foo']]             , events:[['get','foo','bar']]      }
-, { name:'swap'      , methods:[['set','a',1]                                            
-                               ,['set','b',2]                                            
-                               ,['swap','a','b']]          , events:[['swap','a','b',undefined]
-                                                                    ,['swap a','b',undefined]] }
-, { name:'findin'    , methods:[['set','foo','hello']                                            
-                               ,['findin','foo','ll']]     , events:[['findin','foo','ll',2]
-                                                                    ,['findin foo','ll',2]] }
+, { name:'persist'   , methods:[['set','foo','bar']                                                    
+                               ,['persist','foo']]           , events:[['persist foo']            
+                                                                      ,['persist foo',null]]      } 
+, { name:'randomkey' , methods:[['set','a',1]                                                     
+                               ,['set','b',2]                                                     
+                               ,['set','c',3]                                                     
+                               ,['randomkey']]               , eventsOr:[['randomkey','a']        
+                                                                        ,['randomkey','b']        
+                                                                        ,['randomkey','c']]       }
+, { name:'rename'    , methods:[['set','a',1]                                                     
+                               ,['rename','a','b']]          , events:[['rename','a','b']         
+                                                                      ,['rename a','b']]          } 
+// renamenx
+// sort
+// type
+, { name:'ttl'       , methods:[['set','foo','bar'] 
+                               ,['expire','foo',60]
+                               ,['ttl','foo']]               , events:[['ttl','foo',60]
+                                                                      ,['ttl foo',60]]          }
+// append
+// decr
+// decrby
+, { name:'get'       , methods:[['set','foo','bar']                                               
+                               ,['get','foo']]               , events:[['get','foo','bar']]       }
+// getbit
+// getrange
+// getset
+// incr
+// incrby
+// mget
+// mset
+// msetnx
+, { name:'set'       , methods:[['set','foo','bar']]         , events:[['set','foo','bar']]       }
+// setbit
+// setex
+// setnx
+// setrange
+// strlen
+, { name:'hdel'      , methods:[['hset','hash','a',1]                                             
+                               ,['hdel','hash','a']]         , events:[['hdel','hash','a']        
+                                                                      ,['hdel hash','a']]         }
+// hexists
+// hget
+// hgetall
+, { name:'hincr'     , methods:[['hset','foo','a',2]                                             
+                               ,['hincr','foo','a']]         , events:[['hincr','foo','a',3]      
+                                                                      ,['hincrby','foo','a',1,3]      
+                                                                      ,['hincr foo','a',3]      
+                                                                      ,['hincrby foo','a',1,3]]   }
+// hincrby
+// hdecr
+// hdecrby
+, { name:'hkeys'     , methods:[['hset','foo','a',1]                                             
+                               ,['hset','foo','b',2]                                             
+                               ,['hset','foo','c',3]                                             
+                               ,['hkeys','foo']]             , events:[['hkeys','foo',['a','b','c']]      
+                                                                      ,['hkeys foo',['a','b','c']]]       }
+, { name:'hlen'      , methods:[['hset','foo','a',1]                                             
+                               ,['hset','foo','b',2]                                             
+                               ,['hset','foo','c',3]                                             
+                               ,['hlen','foo']]              , events:[['hlen','foo',3]      
+                                                                      ,['hkeys foo',3]]           }
+// hmget
+// hmset
+, { name:'hset'      , methods:[['hset','hash','a',1]]       , events:[['hset','hash','a',1]      
+                                                                      ,['hset hash','a',1]]       }
+// hsetnx
+// hvals
+, { name:'lindex'    , methods:[['rpush','mylist','foo']                                             
+                               ,['lindex','mylist',0]]       , events:[['lindex','mylist',0,'foo']      
+                                                                      ,['lindex mylist',0,'foo']]       }
+// linsert
+, { name:'llen'      , methods:[['rpush','mylist','one']                                             
+                               ,['rpush','mylist','thow']                                             
+                               ,['rpush','mylist','three']                                             
+                               ,['llen','mylist']]           , events:[['llen','mylist',3]      
+                                                                      ,['llen mylist',3]]         }
+// lpop
+// lpush
+// lpushx
+// lrange
+// lrem
+, { name:'lset'      , methods:[['rpush','mylist','foo']                                          
+                               ,['lset','mylist',0,'one']]   , events:[['lset','mylist',0,'one']  
+                                                                      ,['lset mylist',0,'one']]   }
+// ltrim
+// rpop
+// rpoplpush
+// rpush
+// rpushx
+// dump
+, { name:'swap'      , methods:[['set','a',1]                                                     
+                               ,['set','b',2]                                                     
+                               ,['swap','a','b']]            , events:[['swap','a','b',undefined] 
+                                                                      ,['swap a','b',undefined]]  }
+, { name:'findin'    , methods:[['set','foo','hello']                                              
+                               ,['findin','foo','ll']]       , events:[['findin','foo','ll',2]
+                                                                      ,['findin foo','ll',2]]     } 
 ]
 
 ME.remote = {}
@@ -110,8 +184,8 @@ remoteSamples.forEach(function(x){
     var p = common.plan(0,done)
     if (x.methods) {
       x.methods.forEach(function(m){
-        var currM = m.shift()
-        process.nextTick(function(){
+        var currM = m.shift()                                 
+        process.nextTick(function(){                         
           common.serverRemotes[0].remote[currM]
             .apply(common.serverRemotes[0].remote,m)
           common.clientRemotes[0].remote[currM]
@@ -123,28 +197,31 @@ remoteSamples.forEach(function(x){
       x.events.forEach(function(e){
         p.todo = p.todo+4
         var currE = e.shift()
+        if (!e[e.length-1]) e.pop()
         common.clientRemotes[0].remote.once(currE,function(){
-          if (e[e.length-1] instanceof RegExp) 
-            e[e.length-1] = e[e.length-1].source
-          if (e[e.length-1] === undefined) 
-            e[e.length-1] = null
-          assert.deepEqual([].slice.call(arguments),e)
+          var args = [].slice.call(arguments)
+          if (e[e.length-1] instanceof RegExp) e[e.length-1] = e[e.length-1].source
+          if (!args[args.length-1]) args.pop()
+          assert.deepEqual(args,e)
           p.did()
         })
         common.serverRemotes[0].remote.once(currE,function(){
-          if (e[e.length-1] instanceof RegExp) 
-            e[e.length-1] = e[e.length-1].source
-          if (e[e.length-1] === undefined) 
-            e[e.length-1] = null
-          assert.deepEqual([].slice.call(arguments),e)
+          if (e[e.length-1] instanceof RegExp) e[e.length-1] = e[e.length-1].source
+          var args = [].slice.call(arguments)
+          if (!args[args.length-1]) args.pop()
+          assert.deepEqual(args,e)
           p.did()
         })
         common.clientVat.once(currE,function(){
-          assert.deepEqual([].slice.call(arguments),e)
+          var args = [].slice.call(arguments)
+          if (!args[args.length-1]) args.pop()
+          assert.deepEqual(args,e)
           p.did()
         })
         common.serverVat.once(currE,function(){
-          assert.deepEqual([].slice.call(arguments),e)
+          var args = [].slice.call(arguments)
+          if (!args[args.length-1]) args.pop()
+          assert.deepEqual(args,e)
           p.did()
         })
       })
