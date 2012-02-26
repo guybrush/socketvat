@@ -1,5 +1,5 @@
 { "name" : "socketvat"
-, "version" : "0.0.1"
+, "version" : "0.0.2"
 , "description" : "eventvat + nssocket"
 , "main" : "socketvat.js"
 , "scripts" : 
