@@ -1,5 +1,5 @@
 { "name" : "socketvat"
-, "version" : "0.0.2"
+, "version" : "0.0.3"
 , "description" : "eventvat + nssocket"
 , "main" : "socketvat.js"
 , "scripts" : 
@@ -12,6 +12,11 @@
   , "eventvat"      : "0.1.7"
   , "nssocket"      : "0.3.7"
   }
+, "repository" :
+  { "type" : "git"
+  , "url" : "git://github.com/guybrush/socketvat.git"
+  }
+, "homepage" : "https://github.com/guybrush/socketvat"
 , "devDependencies" :
   { "mocha" : "0.13.x" }
 }
