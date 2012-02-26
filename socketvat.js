@@ -113,7 +113,6 @@ p.connect = function() {
 
 p.initSocket = function(s,cb) {
   var self = this
-  
   s.data(self.namespace+'::**',function(d){
     var method = this.event[2] == 'method' ? this.event[3] : null
     var event  = this.event[2] == 'event'  ? this.event[3] : null

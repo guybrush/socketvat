@@ -1,5 +1,6 @@
 var ME = module.exports = {}
 var sv = require('../socketvat')
+var ev = require('eventvat')
 var EE2 = require('eventemitter2').EventEmitter2
 var fs = require('fs')
 var path = require('path')
@@ -8,6 +9,7 @@ var common =
 { ee2log: function(name){return function(){
     console.log((name || '☼')+':',this.event,'→',[].slice.call(arguments))
   }}
+, vat: ev()
 , plan: function plan(todo,cb) {
     if (!(this instanceof plan)) return new plan(todo,cb)
     var self = this
@@ -37,8 +39,14 @@ var remoteSamples =
 // expireat                                                                                    
 , { name:'keys'      , methods:[['set','foo','bar']                                            
                                ,['keys','.*']]             , events:[['keys',['foo'],/.*/]]    }
-// move                                                                                        
-// object                                                                                      
+// not sure about move..
+// , { name:'move'      , methods:[['foo','bar']                                                  
+//                                ,['move','foo',common.vat]] , events:[['move','foo',common.vat]       
+//                                                                     ,['move foo',common.vat]]      }                                                                                        
+// object - not implemented 
+, { name:'persist'   , methods:[['set','foo','bar']                                                  
+                               ,['persist','foo']]         , events:[['persist foo']        
+                                                                    ,['persist foo',null]]     } 
 , { name:'randomkey' , methods:[['set','a',1]                                                  
                                ,['set','b',2]                                                  
                                ,['set','c',3]                                                  
@@ -73,24 +81,27 @@ ME.remote.before = function(done){
   var p = common.plan(2,done)
   var port = ~~(Math.random()*50000)+10000
   common.serverVat = sv()
+  //common.serverVat.onAny(common.ee2log('serverVat'))
   common.serverRemotes = []
-  common.serverVat.listen(port,function(rem,s){
-    //rem.onAny(common.ee2log('serverRemote'))
-    common.serverRemotes.push({remote:rem,socket:s})
+  common.serverVat.listen(port,function(r,s){
+    //r.onAny(common.ee2log('serverRemote'))
+    //s.onAny(common.ee2log('serverSocket'))
+    common.serverRemotes.push({remote:r,socket:s})
     p.did()
   })
   common.clientVat = sv()
+  //common.clientVat.onAny(common.ee2log('clientVat'))
   common.clientRemotes = []
-  common.clientVat.connect(port,function(rem,s){
-    //rem.onAny(common.ee2log('clientRemote'))
-    common.clientRemotes.push({remote:rem,socket:s})
+  common.clientVat.connect(port,function(r,s){
+    //r.onAny(common.ee2log('clientRemote'))
+    //s.onAny(common.ee2log('clientSocket'))
+    common.clientRemotes.push({remote:r,socket:s})
     p.did()
   })
 }
 ME.remote.beforeEach = function(done){
-  Object.keys(common.serverVat.hash).forEach(function(x){
-    delete common.serverVat.hash[x]
-  })
+  common.serverVat.die()
+  common.clientVat.die()
   done()
 }
 
