@@ -14,6 +14,7 @@
 ## example
 
     var sv = require('socketvat')
+
     function ee2log(name){return function(){
       console.log((name || '☼')+':',this.event,'→',[].slice.call(arguments))
     }}
@@ -35,20 +36,20 @@
     })
     
     serverVat.on('*',ee2log('serverVat'))
-    clientVat.on('*',ee2log('serverVat'))
+    clientVat.on('*',ee2log('clientVat'))
     
     serverVat.set('foo','bar')
     clientVat.set('foo','bar')
-    
+        
 output:
 
     serverVat: set → [ 'foo', 'bar' ]
-    serverVat: set → [ 'foo', 'bar' ]
+    clientVat: set → [ 'foo', 'bar' ]
     sent the message
     serverVat: set → [ 'client', 'y' ]
     serverVat: get → [ 'client', 'y' ]
     serverVat: keys → [ [ 'client' ], /client/ ]
-    serverVat: set → [ 'server', 'x' ]
+    clientVat: set → [ 'server', 'x' ]
     clientRemote **: [ 'data', 'socketvat', 'event', 'set', 'client' ] → [ 'y' ]
     clientRemote **: [ 'data', 'socketvat', 'event', 'set' ] → [ 'client', 'y' ]
     clientRemote **: [ 'data', 'socketvat', 'event', 'get', 'client' ] → [ 'y' ]
