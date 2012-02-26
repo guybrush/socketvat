@@ -113,37 +113,46 @@ p.connect = function() {
 
 p.initSocket = function(s,cb) {
   var self = this
-  s.data(self.namespace+'::**',function(){
+  s.data(self.namespace+'::**',function(d){
     var method = this.event[2] == 'method' ? this.event[3] : null
     var event  = this.event[2] == 'event'  ? this.event[3] : null
     var args = this.event.slice(4)
-    if (arguments) args = args.concat([].slice.call(arguments))
-    // if (method) console.log('REMOTE WANTS TO '+method,args)
-    // if (event) console.log('REMOTE DID '+event,args)
+    if (arguments) { 
+      args = args.concat([].slice.call(arguments))
+      if (args[args.length-1] === null) args.pop()
+    }
+    d = d || {}
+    args = d.args || []
+    //if (method) console.log('REMOTE WANTS TO '+method,args)
+    //if (event) console.log('REMOTE DID '+event,args)
     if (method) {
       switch (method) {
         case 'onAny':
           self.onAny(function(){
-            var event = [self.namespace,'event']
-                          .concat(this.event.split(' '))
-                          .concat([].slice.call(arguments))
-            var data = event.pop()
-            s.send(event,data)
+            var split = this.event.split(' ')
+            var args = [].slice.call(arguments)
+            if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
+            var event = [self.namespace,'event'].concat(split)
+            s.send(event,{args:args})
           })
           break
         case 'on':
         case 'subscribe':
           args[0] = args[0].split('::').join(' ')
           self.on(args[0],function(){
-            var event = [self.namespace,'event']
-                          .concat(this.event.split(' '))
-                          .concat([].slice.call(arguments))
-            var data = event.pop()
-            s.send(event,data)
+            var split = this.event.split(' ')
+            var args = [].slice.call(arguments)
+            if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
+            var event = [self.namespace,'event'].concat(split)
+            s.send(event,{args:args})
           })
           break
         case 'unsubscribe':
           // #TODO
+          break
+        case 'keys':
+          var regex = (new RegExp(args[0]))
+          self.keys(regex)
           break
         default:
           if (ev.prototype[method] && typeof ev.prototype[method] == 'function')
@@ -159,11 +168,15 @@ p.initSocket = function(s,cb) {
   }
   r.on = r.subscribe = function(event,cb,_cb){
     event = event.split(' ').join('::')
-    s.data(self.namespace+'::event::'+event+'::**',cb)
-    s.send([self.namespace,'method','on'],event,_cb)
+    s.data(self.namespace+'::event::'+event+'::**',function(d){
+      cb.apply(this,d.args)
+    })
+    s.send([self.namespace,'method','on'],{args:[event]},_cb)
   }
   r.onAny = function(cb,_cb){
-    s.data(self.namespace+'::event::**',cb)
+    s.data(self.namespace+'::event::**',function(d){
+      cb.apply(this,d.args)
+    })
     s.send([self.namespace,'method','onAny'],_cb)
   }
   r.unsubscribe = function(){} // #TODO
@@ -181,24 +194,25 @@ p.initSocket = function(s,cb) {
       var args = [].slice.call(arguments)
       var cb = typeof args[args.length-1] == 'function'
                ? args.pop() : null
-      s.send([self.namespace,'method',m].concat(args),cb)
+      // s.send([self.namespace,'method',m].concat(args),cb)
+      s.send([self.namespace,'method',m],{args:args},cb)
     }
   })
   cb && cb(r,s)
 }
 
 
-/* * /
+/* * / 
 
 // console.log(Object.keys(ev.prototype))
-
+function ee2log(name){return function(){
+  console.log((name || '☼')+':',this.event,'→',[].slice.call(arguments))
+}}
 var sv = socketvat
 
 var serverVat = sv()
 serverVat.listen(3000,function(r,s){
-  r.on('**',function(){
-    console.log('REMOTE CLIENT:',this.event,'→',[].slice.call(arguments))
-  })
+  r.onAny(ee2log('serverRemote **'))
   r.on('error',function(){})
   r.on('end',function(){})
   r.set('server','x')
@@ -206,19 +220,14 @@ serverVat.listen(3000,function(r,s){
 
 var clientVat = sv()
 clientVat.connect(3000,function(r){
-  r.on('*',function(){
-    console.log('REMOTE SERVER:',this.event,'→',[].slice.call(arguments))
-  })
+  r.onAny(ee2log('clientRemote **'))
   r.set('client','y',function(err){console.log('sent the message')})
   r.get('client')
+  r.keys('client')
 })
 
-serverVat.on('*',function(){
-    console.log('LOCAL SERVER:',this.event,'→',[].slice.call(arguments))
-  })
-clientVat.on('*',function(){
-    console.log('LOCAL CLIENT:',this.event,'→',[].slice.call(arguments))
-  })
+serverVat.on('*',ee2log('serverVat'))
+clientVat.on('*',ee2log('serverVat'))
 
 serverVat.set('foo','bar')
 clientVat.set('foo','bar')

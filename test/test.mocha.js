@@ -20,12 +20,14 @@ var common =
     events.forEach(function(i){
       Object.keys(opts.events[i]).forEach(function(x){
         p.todo = p.todo+2
+        //common.clientVat.onAny(common.ee2log('clientVat **'))
         common.clientVat.once(x,function(d){
-          assert.equal(d,opts.events[i][x])
+          assert.deepEqual([].slice.call(arguments),opts.events[i][x])
           p.did()
         })
-        common.serverVat.once(x,function(d){
-          assert.equal(d,opts.events[i][x])
+        //common.serverVat.onAny(common.ee2log('serverVat **'))
+        common.serverVat.once(x,function(){
+          assert.deepEqual([].slice.call(arguments),opts.events[i][x])
           p.did()
         })
       })
@@ -39,36 +41,39 @@ module.exports =
 { remote: 
   { before: function(done){
       var p = common.plan(2,done)
+      var port = ~~(Math.random()*50000)+10000
       common.serverVat = sv()
       //common.serverVat.onAny(common.ee2log('serverVatAny'))
       common.serverRemotes = []
-      common.serverVat.listen(common.ports[0],function(rem,s){
+      common.serverVat.listen(port,function(rem,s){
         common.serverRemotes.push({remote:rem,socket:s})
         p.did()
       })
       common.clientVat = sv()
       //common.clientVat.onAny(common.ee2log('clientVatAny'))
       common.clientRemotes = []
-      common.clientVat.connect(common.ports[0],function(rem,s){
+      common.clientVat.connect(port,function(rem,s){
         common.clientRemotes.push({remote:rem,socket:s})
         p.did()
       })
     }
-  , set: function(done){common.scenario({method:'set',args:['foo','bar'],events:[{'set foo':'bar'}]},done)}
-  , get: function(done){common.scenario({method:'get',args:['foo'],events:[{'get foo':'bar'}]},done)}
+  , set:  function(done){common.scenario({method:'set',args:['foo','bar'],events:[{'set':['foo','bar']}]},done)}
+  , get:  function(done){common.scenario({method:'get',args:['foo'],events:[{'get':['foo','bar']}]},done)}
+  , keys: function(done){common.scenario({method:'keys',args:['.*'],events:[{'keys':[['foo'],/.*/]}]},done)}
   }
 , 'simple set/get': function(done){
     var p = common.plan(10,done)
     var port = ~~(Math.random()*50000)+10000
     var serverVat = sv()
     serverVat.listen(port,function(r){
-      r.on('*',function(d){
+      r.on('*',function(){
         assert.equal(this.event[0],'data')
         assert.equal(this.event[1],'socketvat')
         assert.equal(this.event[2],'event')
-        assert.equal(d,'x')
-        if (this.event[3] == 'set' && this.event[4] == 'server') p.did()
-        if (this.event[3] == 'get' && this.event[4] == 'server') p.did()
+        var args = [].slice.call(arguments)
+        assert.deepEqual(args,['server','x'])
+        if (this.event[3] == 'set') p.did()
+        if (this.event[3] == 'get') p.did()
       })
       r.set('server','x') 
       r.get('server')   
@@ -76,13 +81,14 @@ module.exports =
     
     var clientVat = sv()
     clientVat.connect(port,function(r){
-      r.on('*',function(d){
+      r.on('*',function(){
         assert.equal(this.event[0],'data')
         assert.equal(this.event[1],'socketvat')
         assert.equal(this.event[2],'event')
-        assert.equal(d,'y')
-        if (this.event[3] == 'set' && this.event[4] == 'client') p.did()
-        if (this.event[3] == 'get' && this.event[4] == 'client') p.did()
+        var args = [].slice.call(arguments)
+        assert.deepEqual(args,['client','y'])
+        if (this.event[3] == 'set') p.did()
+        if (this.event[3] == 'get') p.did()
       })
       r.set('client','y') 
       r.get('client')
