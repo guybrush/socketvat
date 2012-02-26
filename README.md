@@ -22,8 +22,8 @@
     var serverVat = sv()
     serverVat.listen(3000,function(r,s){
       r.onAny(ee2log('serverRemote **'))
-      r.on('error',function(){})
-      r.on('end',function(){})
+      s.on('error',function(err){console.log('socket error',err)})
+      s.on('end',function(){console.log('client disconnected')})
       r.set('server','x')
     })
     
