@@ -200,36 +200,3 @@ p.initSocket = function(s,cb) {
   })
   cb && cb(r,s)
 }
-
-
-/* * / 
-
-// console.log(Object.keys(ev.prototype))
-function ee2log(name){return function(){
-  console.log((name || '☼')+':',this.event,'→',[].slice.call(arguments))
-}}
-var sv = socketvat
-
-var serverVat = sv()
-serverVat.listen(3000,function(r,s){
-  r.onAny(ee2log('serverRemote **'))
-  r.on('error',function(){})
-  r.on('end',function(){})
-  r.set('server','x')
-})
-
-var clientVat = sv()
-clientVat.connect(3000,function(r){
-  r.onAny(ee2log('clientRemote **'))
-  r.set('client','y',function(err){console.log('sent the message')})
-  r.get('client')
-  r.keys('client')
-})
-
-serverVat.on('*',ee2log('serverVat'))
-clientVat.on('*',ee2log('serverVat'))
-
-serverVat.set('foo','bar')
-clientVat.set('foo','bar')
-
-/* */
