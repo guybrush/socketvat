@@ -1,4 +1,4 @@
-# socketvad
+# socketvat
 
 [EventVat] + [nssocket]
 
