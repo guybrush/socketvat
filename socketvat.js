@@ -113,6 +113,7 @@ p.connect = function() {
 
 p.initSocket = function(s,cb) {
   var self = this
+  
   s.data(self.namespace+'::**',function(d){
     var method = this.event[2] == 'method' ? this.event[3] : null
     var event  = this.event[2] == 'event'  ? this.event[3] : null
@@ -176,19 +177,22 @@ p.initSocket = function(s,cb) {
   r.on = r.subscribe = function(event,cb,_cb){
     event = event.split(' ').join('::')
     s.data(self.namespace+'::event::'+event,function(d){
+      this.event = this.event.slice(3).join(' ') // not sure about that 
       cb.apply(this,d.args)
     })
     s.send([self.namespace,'method','on'],{args:[event]},_cb)
   }
   r.once = function(event,cb,_cb){
     event = event.split(' ').join('::')
-    s.dataOnce(self.namespace+'::event::'+event,function(d){
+    s.dataOnce(self.namespace+'::event::'+event,function(d){   
+      this.event = this.event.slice(3).join(' ') // not sure about that 
       cb.apply(this,d.args)
     })
     s.send([self.namespace,'method','once'],{args:[event]},_cb)
   }
   r.onAny = function(cb,_cb){
     s.data(self.namespace+'::event::**',function(d){
+      this.event = this.event.slice(3).join(' ') // not sure about that 
       cb.apply(this,d.args)
     })
     s.send([self.namespace,'method','onAny'],_cb)

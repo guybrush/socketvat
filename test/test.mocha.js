@@ -171,13 +171,11 @@ ME['simple set/get'] = function(done){
   var serverVat = sv()
   serverVat.listen(port,function(r){
     r.on('*',function(){
-      assert.equal(this.event[0],'data')
-      assert.equal(this.event[1],'socketvat')
-      assert.equal(this.event[2],'event')
       var args = [].slice.call(arguments)
       assert.deepEqual(args,['server','x'])
-      if (this.event[3] == 'set') p.did()
-      if (this.event[3] == 'get') p.did()
+      var event = this.event.split(' ')
+      if (event[0] == 'set') p.did()
+      if (event[0] == 'get') p.did()
     })
     r.set('server','x')
     r.get('server')
@@ -186,13 +184,11 @@ ME['simple set/get'] = function(done){
   var clientVat = sv()
   clientVat.connect(port,function(r){
     r.on('*',function(){
-      assert.equal(this.event[0],'data')
-      assert.equal(this.event[1],'socketvat')
-      assert.equal(this.event[2],'event')
       var args = [].slice.call(arguments)
       assert.deepEqual(args,['client','y'])
-      if (this.event[3] == 'set') p.did()
-      if (this.event[3] == 'get') p.did()
+      var event = this.event.split(' ')
+      if (event[0] == 'set') p.did()
+      if (event[0] == 'get') p.did()
     })
     r.set('client','y')
     r.get('client')
