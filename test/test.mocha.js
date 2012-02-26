@@ -75,12 +75,14 @@ ME.remote.before = function(done){
   common.serverVat = sv()
   common.serverRemotes = []
   common.serverVat.listen(port,function(rem,s){
+    //rem.onAny(common.ee2log('serverRemote'))
     common.serverRemotes.push({remote:rem,socket:s})
     p.did()
   })
   common.clientVat = sv()
   common.clientRemotes = []
   common.clientVat.connect(port,function(rem,s){
+    //rem.onAny(common.ee2log('clientRemote'))
     common.clientRemotes.push({remote:rem,socket:s})
     p.did()
   })
@@ -98,16 +100,34 @@ remoteSamples.forEach(function(x){
     if (x.methods) {
       x.methods.forEach(function(m){
         var currM = m.shift()
-        common.serverRemotes[0].remote[currM]
-          .apply(common.serverRemotes[0].remote,m)
-        common.clientRemotes[0].remote[currM]
-          .apply(common.clientRemotes[0].remote,m)
+        process.nextTick(function(){
+          common.serverRemotes[0].remote[currM]
+            .apply(common.serverRemotes[0].remote,m)
+          common.clientRemotes[0].remote[currM]
+            .apply(common.clientRemotes[0].remote,m)
+        })
       })
     }
     if (x.events) {
       x.events.forEach(function(e){
-        p.todo = p.todo+2
+        p.todo = p.todo+4
         var currE = e.shift()
+        common.clientRemotes[0].remote.once(currE,function(){
+          if (e[e.length-1] instanceof RegExp) 
+            e[e.length-1] = e[e.length-1].source
+          if (e[e.length-1] === undefined) 
+            e[e.length-1] = null
+          assert.deepEqual([].slice.call(arguments),e)
+          p.did()
+        })
+        common.serverRemotes[0].remote.once(currE,function(){
+          if (e[e.length-1] instanceof RegExp) 
+            e[e.length-1] = e[e.length-1].source
+          if (e[e.length-1] === undefined) 
+            e[e.length-1] = null
+          assert.deepEqual([].slice.call(arguments),e)
+          p.did()
+        })
         common.clientVat.once(currE,function(){
           assert.deepEqual([].slice.call(arguments),e)
           p.did()
@@ -119,11 +139,19 @@ remoteSamples.forEach(function(x){
       })
     }
     if (x.eventsOr) {
-      p.todo = p.todo+2
+      p.todo = p.todo+4
       var ee = []
       x.eventsOr.forEach(function(e){
         var currE = e.shift()
         ee.push(currE)
+        common.clientRemotes[0].remote.once(currE,function(){
+          assert.ok(!~([].slice.call(arguments).indexOf(ee)))
+          p.did()
+        })                                                                                     
+        common.serverRemotes[0].remote.once(currE,function(){
+          assert.ok(!~([].slice.call(arguments).indexOf(ee)))
+          p.did()
+        })
         common.clientVat.once(currE,function(){
           assert.ok(!~([].slice.call(arguments).indexOf(ee)))
           p.did()

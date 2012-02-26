@@ -49,10 +49,10 @@ p.listen = function() {
       }
     }
   })
-  
+
   opts.host = opts.host || '0.0.0.0'
   if (!opts.port) throw new Error('no port defined')
-    
+
   var self = this
   var server
   if (opts.tls.key && opts.tls.cert){
@@ -93,7 +93,7 @@ p.connect = function() {
       }
     }
   })
-  
+
   opts.host = opts.host || '0.0.0.0'
   if (!opts.port) throw new Error('no port defined')
 
@@ -117,7 +117,7 @@ p.initSocket = function(s,cb) {
     var method = this.event[2] == 'method' ? this.event[3] : null
     var event  = this.event[2] == 'event'  ? this.event[3] : null
     var args = this.event.slice(4)
-    if (arguments) { 
+    if (arguments) {
       args = args.concat([].slice.call(arguments))
       if (args[args.length-1] === null) args.pop()
     }
@@ -147,6 +147,16 @@ p.initSocket = function(s,cb) {
             s.send(event,{args:args})
           })
           break
+        case 'once':
+          args[0] = args[0].split('::').join(' ')
+          self.once(args[0],function(){
+            var split = this.event.split(' ')
+            var args = [].slice.call(arguments)
+            if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
+            var event = [self.namespace,'event'].concat(split)
+            s.send(event,{args:args})
+          })
+          break
         case 'unsubscribe':
           // #TODO
           break
@@ -163,15 +173,19 @@ p.initSocket = function(s,cb) {
     }
   })
   var r = {}
-  r.once = function(event,cb,_cb){
-    event = event.split(' ').join('::')
-  }
   r.on = r.subscribe = function(event,cb,_cb){
     event = event.split(' ').join('::')
-    s.data(self.namespace+'::event::'+event+'::**',function(d){
+    s.data(self.namespace+'::event::'+event,function(d){
       cb.apply(this,d.args)
     })
     s.send([self.namespace,'method','on'],{args:[event]},_cb)
+  }
+  r.once = function(event,cb,_cb){
+    event = event.split(' ').join('::')
+    s.dataOnce(self.namespace+'::event::'+event,function(d){
+      cb.apply(this,d.args)
+    })
+    s.send([self.namespace,'method','once'],{args:[event]},_cb)
   }
   r.onAny = function(cb,_cb){
     s.data(self.namespace+'::event::**',function(d){
