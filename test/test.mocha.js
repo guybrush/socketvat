@@ -4,11 +4,7 @@ var fs = require('fs')
 var path = require('path')
 var assert = require('assert')
 var common = 
-{ ports:
-  [ ~~(Math.random()*50000)+10000
-  , ~~(Math.random()*50000)+10000
-  ]
-, ee2log: function(name){return function(){
+{ ee2log: function(name){return function(){
     console.log((name || '☼')+':',this.event,'→',[].slice.call(arguments))
   }}
 , plan: function plan(todo,cb) {
@@ -23,20 +19,24 @@ var common =
     var p = common.plan(0,done)
     events.forEach(function(i){
       Object.keys(opts.events[i]).forEach(function(x){
-        p.todo++
+        p.todo = p.todo+2
+        common.clientVat.once(x,function(d){
+          assert.equal(d,opts.events[i][x])
+          p.did()
+        })
         common.serverVat.once(x,function(d){
-          // console.log('did',p.todo,this.event,d,opts.events[i][x])
           assert.equal(d,opts.events[i][x])
           p.did()
         })
       })
     })
+    common.serverRemotes[0].remote[opts.method].apply(common.serverRemotes[0].remote,opts.args)
     common.clientRemotes[0].remote[opts.method].apply(common.clientRemotes[0].remote,opts.args)
   }
 }
 
 module.exports =
-{ api: 
+{ remote: 
   { before: function(done){
       var p = common.plan(2,done)
       common.serverVat = sv()
@@ -57,7 +57,7 @@ module.exports =
   , set: function(done){common.scenario({method:'set',args:['foo','bar'],events:[{'set foo':'bar'}]},done)}
   , get: function(done){common.scenario({method:'get',args:['foo'],events:[{'get foo':'bar'}]},done)}
   }
-, 'simple': function(done){
+, 'simple set/get': function(done){
     var p = common.plan(10,done)
     var port = ~~(Math.random()*50000)+10000
     var serverVat = sv()
@@ -120,8 +120,7 @@ module.exports =
     clientVat.connect(opts,function(rem,s){
       assert.equal(s._type,'tls')
       p.did()
-    })
-    
+    }) 
   }
 }
 
