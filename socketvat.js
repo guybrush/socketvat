@@ -131,7 +131,6 @@ p.initSocket = function(s,cb) {
   function unsub(x) {
     Object.keys(subs).forEach(function(y){
       if (x && x!=y) return
-      console.log('trying to remove',y,subs)
       self.removeListener(y,subs[y])
       delete subs[y]
     })
