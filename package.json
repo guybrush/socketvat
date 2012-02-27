@@ -18,5 +18,7 @@
   }
 , "homepage" : "https://github.com/guybrush/socketvat"
 , "devDependencies" :
-  { "mocha" : "0.13.x" }
+  { "mocha" : "0.13.x" 
+  , "debug" : "*"
+  }
 }

@@ -194,7 +194,7 @@ p.initSocket = function(s,cb) {
       this.event = this.event.slice(3).join(' ') // not sure about that 
       cb.apply(this,d.args)
     })
-    s.send([self.namespace,'method','onAny'],_cb)
+    s.send([self.namespace,'method','onAny'],{args:[]},_cb)
   }
   r.unsubscribe = function(){} // #TODO
   ;[ 'die', 'del', 'exists', 'expire', 'expireat', 'keys', 'move', 'object'
