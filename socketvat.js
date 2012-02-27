@@ -113,6 +113,32 @@ p.connect = function() {
 
 p.initSocket = function(s,cb) {
   var self = this
+  var subs = {}
+  var subsListners = {}
+  function sub(x) {
+    x = x || '**'
+    if (!subs[x]) {
+      subs[x] = function(d) {
+        var args = [].slice.call(arguments)
+        var split = this.event.split(' ')
+        if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
+        var event = [self.namespace,'event'].concat(split)
+        s.send(event,{args:args})
+      }
+      self.on(x,subs[x])
+    }
+  }
+  function unsub(x) {
+    Object.keys(subs).forEach(function(y){
+      if (x && x!=y) return
+      console.log('trying to remove',y,subs)
+      self.removeListener(y,subs[y])
+      delete subs[y]
+    })
+  }
+  s.on('close',function(){
+    unsub()
+  })
   s.data(self.namespace+'::**',function(d){
     var method = this.event[2] == 'method' ? this.event[3] : null
     var event  = this.event[2] == 'event'  ? this.event[3] : null
@@ -127,38 +153,32 @@ p.initSocket = function(s,cb) {
     //if (event) console.log('REMOTE DID '+event,args)
     if (method) {
       switch (method) {
-        case 'onAny':
-          self.onAny(function(){
-            var split = this.event.split(' ')
-            var args = [].slice.call(arguments)
-            if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
-            var event = [self.namespace,'event'].concat(split)
-            s.send(event,{args:args})
-          })
+        case 'onAny': 
+          sub('**')
           break
         case 'on':
         case 'subscribe':
           args[0] = args[0].split('::').join(' ')
-          self.on(args[0],function(){
-            var split = this.event.split(' ')
-            var args = [].slice.call(arguments)
-            if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
-            var event = [self.namespace,'event'].concat(split)
-            s.send(event,{args:args})
-          })
+          sub(args[0])
           break
         case 'once':
           args[0] = args[0].split('::').join(' ')
           self.once(args[0],function(){
-            var split = this.event.split(' ')
             var args = [].slice.call(arguments)
+            var split = this.event.split(' ')
             if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
             var event = [self.namespace,'event'].concat(split)
             s.send(event,{args:args})
           })
           break
+        case 'offAny':
+          unsub('**')
+          break
+        case 'removeListener':
+        case 'off':
         case 'unsubscribe':
-          // #TODO
+          args[0] = args[0].split('::').join(' ')
+          unsub(args[0])
           break
         case 'keys':
           var regex = (new RegExp(args[0]))
@@ -216,4 +236,14 @@ p.initSocket = function(s,cb) {
     }
   })
   cb && cb(r,s)
+}
+
+socketvat.listen = function(opts,cb){
+  var s = socketvat()
+  socketvat.prototype.listen.call(s,opts,cb)
+}
+
+socketvat.connect = function(opts,cb){
+  var s = socketvat()
+  socketvat.prototype.connect.call(s,opts,cb)
 }
