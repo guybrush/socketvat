@@ -10,6 +10,7 @@
 * install node
 * `npm install socketvat`
 * `npm test socketvat`
+* `DEBUG=socketvat,test npm test socketvat`
 
 ## example
 

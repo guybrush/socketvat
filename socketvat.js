@@ -5,6 +5,7 @@ var nss = require('nssocket')
 var ev  = require('eventvat')
 var net = require('net')
 var tls = require('tls')
+var debug = require('debug')('socketvat')
 
 function socketvat(opts) {
   if (!(this instanceof socketvat)) return new socketvat(opts)
@@ -117,6 +118,7 @@ p.initSocket = function(s,cb) {
   var subsListners = {}
   function sub(x) {
     x = x || '**'
+    debug('subscribing',x)
     if (!subs[x]) {
       subs[x] = function(d) {
         var args = [].slice.call(arguments)
@@ -129,6 +131,7 @@ p.initSocket = function(s,cb) {
     }
   }
   function unsub(x) {
+    debug('unsubscribing',x)
     Object.keys(subs).forEach(function(y){
       if (x && x!=y) return
       self.removeListener(y,subs[y])
@@ -148,8 +151,8 @@ p.initSocket = function(s,cb) {
     }
     d = d || {}
     args = d.args || []
-    //if (method) console.log('REMOTE WANTS TO '+method,args)
-    //if (event) console.log('REMOTE DID '+event,args)
+    if (method) debug('data-method',method,args)
+    if (event) debug('data-event',event,args)
     if (method) {
       switch (method) {
         case 'onAny': 
@@ -214,12 +217,20 @@ p.initSocket = function(s,cb) {
       cb.apply(this,d.args)
     })
     s.send([self.namespace,'method','onAny'],{args:[]},_cb)
+  }  
+  r.off = r.unsubscribe = function(event,_cb){
+    event = event.split(' ').join('::')
+    debug('sending','unsubscribe',event)
+    s.send([self.namespace,'method','unsubscribe'],{args:[event]},_cb)
   }
-  r.unsubscribe = function(){} // #TODO
-  ;[ 'die', 'del', 'exists', 'expire', 'expireat', 'keys', 'move', 'object'
-   , 'persist', 'randomkey', 'rename', 'renamenx', 'sort', 'type', 'ttl'
-   , 'append', 'decr', 'decrby', 'get', 'getbit', 'getrange', 'getset', 'incr'
-   , 'incrby', 'mget', 'mset', 'msetnx', 'set', 'setbit', 'setex', 'setnx'
+  r.offAny = function(_cb){
+    s.send([self.namespace,'method','offAny'],{args:[]},_cb)
+  }
+  // console.log(Object.keys(ev.prototype))
+  ;[ 'die', 'del', 'exists', 'expire', 'expireat', 'keys'/*, 'move', 'object'*/
+   , 'persist', 'randomkey', 'rename', 'renamenx', /*'sort', 'type'*/, 'ttl'
+   , 'append', 'decr', 'decrby', 'get'/*, 'getbit'*/, 'getrange', 'getset', 'incr'
+   , 'incrby', 'mget', 'mset', 'msetnx', 'set'/*, 'setbit', 'setex'*/, 'setnx'
    , 'setrange', 'strlen', 'hdel', 'hexists', 'hget', 'hgetall', 'hincr'
    , 'hincrby', 'hdecr', 'hdecrby', 'hkeys', 'hlen', 'hmget' , 'hmset', 'hset'
    , 'hsetnx', 'hvals', 'lindex', 'linsert', 'llen', 'lpop', 'lpush', 'lpushx'

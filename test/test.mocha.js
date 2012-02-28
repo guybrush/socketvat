@@ -22,6 +22,7 @@ var common =
     self.did = function(e) {if (--self.todo==0) cb && cb(e)}
   }
 }
+// console.log(Object.keys(ev.prototype))
 // ;[ 'die', 'del', 'exists', 'expire', 'expireat', 'keys', 'move', 'object'
 //  , 'persist', 'randomkey', 'rename', 'renamenx', 'sort', 'type', 'ttl'
 //  , 'append', 'decr', 'decrby', 'get', 'getbit', 'getrange', 'getset', 'incr'
@@ -34,7 +35,7 @@ var common =
 var remoteSamples =                                        
 [ { name:'del'       , methods:[['set','foo','bar']          
                                ,['del','foo']]               , events:[['del','foo']]                    }
-// die                                                                                                   
+// die - does not emit events                                                                                                  
 , { name:'exists'    , methods:[['set','foo','bar']                                                      
                                ,['exists','foo']                                                         
                                ,['exists','bar']]            , events:[['exists foo',true]               
@@ -43,14 +44,15 @@ var remoteSamples =
                                ,['expire','foo',100]]        , events:[['expire','foo',100]]             }
 , { name:'expireat'  , methods:[['set','foo','bar']                                               
                                ,['expireat','foo'                                                 
-                                ,common.timeTrigger()+100]]  , events:[['expireat','foo',common.timeTriggered+100]]      }                                                                                   
+                                ,common.timeTrigger()+100]]  , events:[['expireat','foo'
+                                                                       ,common.timeTriggered+100]]       }                                                                                   
 , { name:'keys'      , methods:[['set','foo','bar']                                               
                                ,['keys','.*']]               , events:[['keys',['foo'],/.*/]]            }
 // not sure about move..
 // , { name:'move'      , methods:[['foo','bar']                                                  
 //                                ,['move','foo',common.vat]] , events:[['move','foo',common.vat]       
 //                                                                     ,['move foo',common.vat]]      }                                                                                        
-// object - not implemented 
+// object - not implemented yet
 , { name:'persist'   , methods:[['set','foo','bar',100]                                                    
                                ,['persist','foo']]           , events:[['persist','foo'] 
                                                                       ,['persist foo']]                  } 
@@ -64,15 +66,15 @@ var remoteSamples =
                                ,['rename','a','b']]          , events:[['rename','a','b']                
                                                                       ,['rename a','b']]                 } 
 // renamenx                                                                                              
-// sort                                                                                                  
-// type                                                                                                  
+// sort - not implemented yet                                                                                                 
+// type - does not emit events                                                                                               
 , { name:'ttl'       , methods:[['set','foo','bar']                                                      
                                ,['expire','foo',60]                                                      
                                ,['ttl','foo']]               , events:[['ttl','foo',60]                  
                                                                       ,['ttl foo',60]]                   }
 , { name:'append'    , methods:[['set','foo','foo']                                               
                                ,['append','foo','bar']]      , events:[['append','foo','bar','foobar']]  }
-, { name:'decr'      , methods:[['set','foo',3]                                               
+, { name:'decr(by)'  , methods:[['set','foo',3]                                               
                                ,['decr','foo']]              , events:[['decr','foo',2]                  
                                                                       ,['decr foo',2]                  
                                                                       ,['decrby','foo',1,2]                  
@@ -80,17 +82,24 @@ var remoteSamples =
 // decrby
 , { name:'get'       , methods:[['set','foo','bar']                                               
                                ,['get','foo']]               , events:[['get','foo','bar']]              }
-// getbit                                                                                                
-// getrange                                                                                              
-// getset                                                                                                
-// incr                                                                                                  
+// getbit - not implemented yet                                                                                             
+, { name:'getrange'  , methods:[['set','foo','hello world!']                                               
+                               ,['getrange','foo',6,11]]     , events:[['getrange','foo','world']]       }                                                                                              
+// getset - does not emit events                                                                                               
+, { name:'incr(by)'  , methods:[['set','foo',3]                                               
+                               ,['incr','foo']]              , events:[['incr','foo',4]                  
+                                                                      ,['incr foo',4]                  
+                                                                      ,['incrby','foo',1,4]                  
+                                                                      ,['incrby foo',1,4]]               }                                                                                                 
 // incrby                                                                                                
-// mget                                                                                                  
+, { name:'mget'      , methods:[['set','foo','hello world!']
+                               ,['set','bar',42]
+                               ,['mget','foo','bar']]        , events:[['mget',['hello world!',42]]]     }                                                                                                 
 // mset                                                                                                  
 // msetnx                                                                                                
 , { name:'set'       , methods:[['set','foo','bar']]         , events:[['set','foo','bar']]              }
-// setbit                                                                                                
-// setex                                                                                                 
+// setbit - not implemented yet                                                                                               
+// setex - not implemented yet                                                                                                
 // setnx                                                                                                  
 // setrange                                                                                              
 // strlen                                                                                                
@@ -127,7 +136,7 @@ var remoteSamples =
                                ,['hset','foo','b',2]                                             
                                ,['hset','foo','c',3]                                             
                                ,['hvals','foo']]             , events:[['hvals','foo',[1,2,3]]            
-                                                                      ,['hvals foo',[1,2,3]]]             }
+                                                                      ,['hvals foo',[1,2,3]]]            }
 , { name:'lindex'    , methods:[['rpush','mylist','foo']                                                 
                                ,['lindex','mylist',0]]       , events:[['lindex','mylist',0,'foo']       
                                                                       ,['lindex mylist',0,'foo']]        }
@@ -149,12 +158,16 @@ var remoteSamples =
 // rpop                                                                                                  
 // rpoplpush                                                                                             
 // rpush                                                                                                 
-// rpushx                                                                                                
+, { name:'rpushx'    , methods:[['rpush','mylist','one']                                                 
+                               ,['rpushx','mylist','two']                                                 
+                               ,['rpushx','myotherlist'
+                                ,'three']]                   , events:[['rpushx','mylist','two']         
+                                                                      ,['rpushx mylist','two']]          }                                                                                               
 // dump                                                                                                  
 , { name:'swap'      , methods:[['set','a',1]                                                            
                                ,['set','b',2]                                                            
                                ,['swap','a','b']]            , events:[['swap','a','b']        
-                                                                      ,['swap a','b']]         }
+                                                                      ,['swap a','b']]                   }
 , { name:'findin'    , methods:[['set','foo','hello']                                                    
                                ,['findin','foo','ll']]       , events:[['findin','foo','ll',2]           
                                                                       ,['findin foo','ll',2]]            } 
@@ -184,7 +197,6 @@ ME.remote.before = function(done){
   })
 }
 ME.remote.beforeEach = function(done){
-  debug('')
   for (var k in common.serverVat.hash) delete common.serverVat.hash[k]
   for (var k in common.clientVat.hash) delete common.clientVat.hash[k]
   common.serverVat.die()
@@ -199,10 +211,8 @@ remoteSamples.forEach(function(x){
       x.methods.forEach(function(m){
         var currM = m.shift()
         process.nextTick(function(){
-          common.serverRemotes[0].remote[currM]
-            .apply(common.serverRemotes[0].remote,m)
-          common.clientRemotes[0].remote[currM]
-            .apply(common.clientRemotes[0].remote,m)
+          common.serverRemotes[0].remote[currM].apply(common.serverRemotes[0].remote,m)
+          common.clientRemotes[0].remote[currM].apply(common.clientRemotes[0].remote,m)
         })
       })
     }
@@ -211,28 +221,38 @@ remoteSamples.forEach(function(x){
         p.todo = p.todo+4
         var currE = e.shift()
         common.clientRemotes[0].remote.once(currE,function(){
-          if (e[e.length-1] instanceof RegExp) e[e.length-1] = e[e.length-1].source // this is because of eventvat.keys(regexp) 
+          // this is because of eventvat.keys(regexp)
+          if (e[e.length-1] instanceof RegExp)
+            e[e.length-1] = e[e.length-1].source 
           var args = [].slice.call(arguments)
-          if (args[args.length-1] === null) args.pop() // this is because eventvat.swap()
+          // this is because eventvat.swap()
+          if (args[args.length-1] === null) 
+            args.pop()
           assert.deepEqual(args,e)
           p.did()
         })
         common.serverRemotes[0].remote.once(currE,function(){
-          if (e[e.length-1] instanceof RegExp) e[e.length-1] = e[e.length-1].source // this is because of eventvat.keys(regexp)
+          // this is because of eventvat.keys(regexp)
+          if (e[e.length-1] instanceof RegExp) 
+            e[e.length-1] = e[e.length-1].source
           var args = [].slice.call(arguments)
-          if (args[args.length-1] === null) args.pop() // this is because eventvat.swap()
+          // this is because eventvat.swap()
+          if (args[args.length-1] === null) 
+            args.pop() 
           assert.deepEqual(args,e)
           p.did()
         })
         common.clientVat.once(currE,function(){
           var args = [].slice.call(arguments)
-          if (args[args.length-1] === undefined) args.pop() // this is because eventvat.swap()
+          // this is because eventvat.swap()
+          if (args[args.length-1] === undefined) args.pop() 
           assert.deepEqual(args,e)      
           p.did()
         })
         common.serverVat.once(currE,function(){
           var args = [].slice.call(arguments)
-          if (args[args.length-1] === undefined) args.pop() // this is because eventvat.swap()
+          // this is because eventvat.swap()
+          if (args[args.length-1] === undefined) args.pop()
           assert.deepEqual(args,e)
           p.did()
         })
@@ -307,6 +327,29 @@ ME['simple set/get'] = function(done){
 
   serverVat.set('foo','bar')
   clientVat.set('foo','bar')
+}
+
+ME['subscribe/unsubscribe'] = function(done){
+  var p = common.plan(10,done)
+  var port = ~~(Math.random()*50000)+10000
+  var serverVat = sv()
+  var server = serverVat.listen(port,function(r){
+    var i = 0
+    var iv = setInterval(function(){serverVat.set('foo',i++)},20)
+  })
+
+  var clientVat = sv()
+  clientVat.connect(port,function(r){
+    var j = 0
+    r.on('set foo',function(i){
+      j = i
+      r.off('set foo')
+      setTimeout(function(){
+        assert.equal(j,0)
+        done()
+      },80)
+    })
+  })
 }
 
 ME.tls = function(done) {
