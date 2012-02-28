@@ -1,5 +1,5 @@
 { "name" : "socketvat"
-, "version" : "0.0.8"
+, "version" : "0.0.9"
 , "description" : "eventvat + nssocket"
 , "main" : "socketvat.js"
 , "scripts" : 
@@ -8,17 +8,15 @@
   , "stress-clients" : "node test/stress.js clients"
   }
 , "dependencies" : 
-  { "eventemitter2" : "0.4.8"
+  { "debug"         : "0.5.0"
+  , "eventemitter2" : "0.4.8"
   , "eventvat"      : "0.1.7"
   , "nssocket"      : "0.3.7"
   }
+, "devDependencies" : { "mocha" : "0.13.x" }
 , "repository" :
   { "type" : "git"
   , "url" : "git://github.com/guybrush/socketvat.git"
   }
 , "homepage" : "https://github.com/guybrush/socketvat"
-, "devDependencies" :
-  { "mocha" : "0.13.x" 
-  , "debug" : "0.5.x"
-  }
 }
