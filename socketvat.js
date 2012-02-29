@@ -143,7 +143,7 @@ p.initSocket = function(s,cb) {
   })
   s.data(self.namespace+'::**',function(d){
     d = d || {}
-    args = d.args || []
+    var args = d.args || []
     var method = this.event[2] == 'method' ? this.event[3] : null
     var event  = this.event[2] == 'event'  ? this.event[3] : null
     if (method) debug('data-method',method,args)
