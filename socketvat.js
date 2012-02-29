@@ -142,20 +142,15 @@ p.initSocket = function(s,cb) {
     unsub()
   })
   s.data(self.namespace+'::**',function(d){
-    var method = this.event[2] == 'method' ? this.event[3] : null
-    var event  = this.event[2] == 'event'  ? this.event[3] : null
-    var args = this.event.slice(4)
-    if (arguments) {
-      args = args.concat([].slice.call(arguments))
-      if (args[args.length-1] === null) args.pop()
-    }
     d = d || {}
     args = d.args || []
+    var method = this.event[2] == 'method' ? this.event[3] : null
+    var event  = this.event[2] == 'event'  ? this.event[3] : null
     if (method) debug('data-method',method,args)
     if (event) debug('data-event',event,args)
     if (method) {
       switch (method) {
-        case 'onAny': 
+        case 'onAny':
           sub('**')
           break
         case 'on':
@@ -198,26 +193,26 @@ p.initSocket = function(s,cb) {
   r.on = r.subscribe = function(event,cb,_cb){
     event = event.split(' ').join('::')
     s.data(self.namespace+'::event::'+event,function(d){
-      this.event = this.event.slice(3).join(' ') // not sure about that 
+      this.event = this.event.slice(3).join(' ') // not sure about that
       cb.apply(this,d.args)
     })
     s.send([self.namespace,'method','on'],{args:[event]},_cb)
   }
   r.once = function(event,cb,_cb){
     event = event.split(' ').join('::')
-    s.dataOnce(self.namespace+'::event::'+event,function(d){   
-      this.event = this.event.slice(3).join(' ') // not sure about that 
+    s.dataOnce(self.namespace+'::event::'+event,function(d){
+      this.event = this.event.slice(3).join(' ') // not sure about that
       cb.apply(this,d.args)
     })
     s.send([self.namespace,'method','once'],{args:[event]},_cb)
   }
   r.onAny = function(cb,_cb){
     s.data(self.namespace+'::event::**',function(d){
-      this.event = this.event.slice(3).join(' ') // not sure about that 
+      this.event = this.event.slice(3).join(' ') // not sure about that
       cb.apply(this,d.args)
     })
     s.send([self.namespace,'method','onAny'],{args:[]},_cb)
-  }  
+  }
   r.off = r.unsubscribe = function(event,_cb){
     event = event.split(' ').join('::')
     debug('sending','unsubscribe',event)
