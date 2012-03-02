@@ -58,7 +58,11 @@ p.listen = function() {
   var server
   if (opts.tls.key && opts.tls.cert){
     opts.tls.type = 'tls'
-    server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)})
+    server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)}) 
+    server = tls.createServer(opts.tls,function(s){
+      var nssServer = new nss.NsSocket(s,{type:'tcp4'})
+      self.initSocket(nssServer,cb)
+    })
   }
   else
     server = nss.createServer(function(s){self.initSocket(s,cb)})
@@ -102,13 +106,16 @@ p.connect = function() {
   var client
   if (opts.tls.key && opts.tls.cert) {
     opts.tls.type = 'tls'
-    client = new nss.NsSocket(opts.tls)
+    client = tls.connect(opts.port,opts.host,opts.tls,function(){
+      var nssClient = new nss.NsSocket(client,{type:'tcp4'})
+      self.initSocket(nssClient,cb)
+    })
   }
-  else
+  else {
     client = new nss.NsSocket()
-
-  client.connect(opts.port, opts.host)
-  self.initSocket(client,cb)
+    client.connect(opts.port, opts.host)
+    self.initSocket(client,cb)
+  }
   return client
 }
 
@@ -131,9 +138,9 @@ p.initSocket = function(s,cb) {
     }
   }
   function unsub(x) {
-    debug('unsubscribing',x)
     Object.keys(subs).forEach(function(y){
       if (x && x!=y) return
+      debug('unsubscribing',y)
       self.removeListener(y,subs[y])
       delete subs[y]
     })

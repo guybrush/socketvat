@@ -335,7 +335,7 @@ ME['subscribe/unsubscribe'] = function(done){
   var serverVat = sv()
   var server = serverVat.listen(port,function(r){
     var i = 0
-    var iv = setInterval(function(){serverVat.set('foo',i++)},20)
+    var iv = setInterval(function(){serverVat.set('foo',i++)},80)
   })
 
   var clientVat = sv()
@@ -347,13 +347,13 @@ ME['subscribe/unsubscribe'] = function(done){
       setTimeout(function(){
         assert.equal(j,0)
         done()
-      },80)
+      },200)
     })
   })
 }
 
 ME.tls = function(done) {
-  var p = common.plan(2,done)
+  var p = common.plan(10,done)
   var port = ~~(Math.random()*50000)+10000
   var fixturesPath = path.resolve(__dirname+'/../node_modules/nssocket/test/fixtures')
   var opts = { port : port
@@ -361,15 +361,25 @@ ME.tls = function(done) {
              , cert : fs.readFileSync(fixturesPath+'/ryans-cert.pem')
              , ca   : fs.readFileSync(fixturesPath+'/ryans-csr.pem')
              }
+
+
   var serverVat = sv()
-  serverVat.listen(opts,function(rem,s){
-    assert.equal(s._type,'tls')
-    p.did()
+  var server = serverVat.listen(opts,function(r){
+    var i = 0
+    var iv = setInterval(function(){serverVat.set('foo',i++)},80)
   })
+
   var clientVat = sv()
-  clientVat.connect(opts,function(rem,s){
-    assert.equal(s._type,'tls')
-    p.did()
+  clientVat.connect(opts,function(r){
+    var j = 0
+    r.on('set foo',function(i){
+      j = i
+      r.off('set foo')
+      setTimeout(function(){
+        assert.equal(j,0)
+        done()
+      },200)
+    })
   })
 }
 
