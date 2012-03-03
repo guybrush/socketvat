@@ -14,14 +14,14 @@
 
 ## api
 
-### sv = socketvat(opts)
+### sv = socketvat(`opts`)
 
 * `instanceof sv === require('eventvat')`
 * `opts.namespace` - default: `socketvat` - will be used to prefix every event
   which will be sent to remote socket, also it will only listen for remote 
   events prefixed by that namespace
 
-### sv.listen(<arg1>,[<arg2>,[<arg3>]],[<listener>])
+### sv.listen(`<arg1>`,[`<arg2>`,[`<arg3>`]],[`<listener>`])
 
 this will start a `net` or `tls`-Server
 
@@ -40,7 +40,7 @@ this will start a `net` or `tls`-Server
         * a object with helper-functions for communication with remote socketvat
         * an instance of `require('nssocket').NsSocket`
 
-### sv.connect(<arg1>,[<arg2>,[<arg3>]],[<listener>])
+### sv.connect(`<arg1>`,[`<arg2>`,[`<arg3>`]],[`<listener>`])
 
 this will create a `net` or `tls`-Connection
 
