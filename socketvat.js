@@ -7,7 +7,7 @@ var net = require('net')
 var tls = require('tls')
 var debug = require('debug')('socketvat')
 
-function socketvat(opts) {
+function socketvat(opts) {           
   if (!(this instanceof socketvat)) return new socketvat(opts)
   EE2.call(this,{wildcard:true,delimiter:' ',maxListeners:0})
   ev.call(this)
@@ -32,19 +32,22 @@ p.listen = function() {
       if (x.__proto__ === Object.prototype) {
         Object.keys(x).forEach(function(k){
           switch(k) {
-            case 'port'               : opts[k]     = x[k]; break;
-            case 'host'               : opts[k]     = x[k]; break;
-            case 'key'                : opts.tls[k] = x[k]; break;
-            case 'cert'               : opts.tls[k] = x[k]; break;
-            case 'ca'                 : opts.tls[k] = x[k]; break;
-            case 'passphrase'         : opts.tls[k] = x[k]; break;
-            case 'ciphers'            : opts.tls[k] = x[k]; break;
-            case 'requestCert'        : opts.tls[k] = x[k]; break;
-            case 'rejectUnauthorized' : opts.tls[k] = x[k]; break;
-            case 'NPNProtocols'       : opts.tls[k] = x[k]; break;
-            case 'SNICallback'        : opts.tls[k] = x[k]; break;
-            case 'sessionIdContext'   : opts.tls[k] = x[k]; break;
-            default : console.error(new Error('invalid option "'+k+'"'))
+            case 'port' :
+            case 'host' : 
+              opts[k] = x[k]; break;
+            case 'key' :
+            case 'cert' :
+            case 'ca' :
+            case 'passphrase' :
+            case 'ciphers' :
+            case 'requestCert' :
+            case 'rejectUnauthorized' :
+            case 'NPNProtocols' :
+            case 'SNICallback' :
+            case 'sessionIdContext' : 
+              opts.tls[k] = x[k]; break;
+            default : 
+              console.error(new Error('invalid option "'+k+'"'))
           }
         })
       }
@@ -72,6 +75,7 @@ p.listen = function() {
 
 p.connect = function() {
   var args = [].slice.call(arguments)
+  debug('connecting',args)
   var cb = typeof args[args.length-1] == 'function'
            ? args[args.length-1]
            : function(){}
@@ -83,16 +87,20 @@ p.connect = function() {
       if (x.__proto__ === Object.prototype) {
         Object.keys(x).forEach(function(k){
           switch(k) {
-            case 'port'         : opts[k]     = x[k]; break;
-            case 'host'         : opts[k]     = x[k]; break;
-            case 'key'          : opts.tls[k] = x[k]; break;
-            case 'cert'         : opts.tls[k] = x[k]; break;
-            case 'ca'           : opts.tls[k] = x[k]; break;
-            case 'passphrase'   : opts.tls[k] = x[k]; break;
-            case 'NPNProtocols' : opts.tls[k] = x[k]; break;
-            case 'servername'   : opts.tls[k] = x[k]; break;
-            case 'socket'       : opts.tls[k] = x[k]; break;
-            default : console.error(new Error('invalid option "'+k+'"'))
+            case 'port' :
+            case 'host' :
+            case 'reconnect' : 
+              opts[k] = x[k]; break;
+            case 'key' :
+            case 'cert' :
+            case 'ca' :
+            case 'passphrase' :
+            case 'NPNProtocols' :
+            case 'servername' :
+            case 'socket' : 
+              opts.tls[k] = x[k]; break;
+            default : 
+              console.error(new Error('invalid option "'+k+'"'))
           }
         })
       }
@@ -115,6 +123,28 @@ p.connect = function() {
     client = new nss.NsSocket()
     client.connect(opts.port, opts.host)
     self.initSocket(client,cb)
+  }
+  if (opts.reconnect) {
+    client.on('error', function (err) {
+      if (err.code === 'ECONNREFUSED') {
+        self.emit('refused')
+        debug('ECONNREFUSED')
+        setTimeout(function () {
+          self.emit('reconnecting')
+          self.connect.apply(self, args)
+        }, opts.reconnect)
+      }
+    })
+    
+    client.once('close', function () {
+      self.emit('dropped')
+      debug('DROPPED')
+      setTimeout(function () {
+        debug('reconnecting')
+        self.emit('reconnecting')
+        self.connect.apply(self, args)
+      }, opts.reconnect)
+    })
   }
   return client
 }

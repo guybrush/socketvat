@@ -335,7 +335,7 @@ ME['subscribe/unsubscribe'] = function(done){
   var serverVat = sv()
   var server = serverVat.listen(port,function(r){
     var i = 0
-    var iv = setInterval(function(){serverVat.set('foo',i++)},80)
+    var iv = setInterval(function(){serverVat.set('foo',i++)},100)
   })
 
   var clientVat = sv()
@@ -347,7 +347,7 @@ ME['subscribe/unsubscribe'] = function(done){
       setTimeout(function(){
         assert.equal(j,0)
         done()
-      },200)
+      },300)
     })
   })
 }
@@ -366,7 +366,7 @@ ME.tls = function(done) {
   var serverVat = sv()
   var server = serverVat.listen(opts,function(r){
     var i = 0
-    var iv = setInterval(function(){serverVat.set('foo',i++)},80)
+    var iv = setInterval(function(){serverVat.set('foo',i++)},100)
   })
 
   var clientVat = sv()
@@ -378,7 +378,28 @@ ME.tls = function(done) {
       setTimeout(function(){
         assert.equal(j,0)
         done()
-      },200)
+      },300)
+    })
+  })
+}
+
+ME.reconnect = function(done) {
+  this.timeout(5000)
+  var p = common.plan(10,done)
+  var port = ~~(Math.random()*50000)+10000
+  var serverVat = sv()
+  var clientVat = sv()
+  var client = clientVat.connect({port:port,reconnect:100})
+  client.on('connect',common.ee2log('client connect'))
+  clientVat.onAny(common.ee2log('clientVat **'))
+  clientVat.once('reconnecting',function(){
+    var server = serverVat.listen(port,function(r,s){
+      debug('client connected')
+      server.close()
+      var server2 = serverVat.listen(port,function(r,s){
+        debug('client connected again')
+        done()
+      })
     })
   })
 }

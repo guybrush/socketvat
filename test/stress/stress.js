@@ -16,7 +16,7 @@ console.log
 
 var _startClients = !!~process.argv.indexOf('clients')
 
-var sv = require('../socketvat')  
+var sv = require('../../socketvat')  
 var _I = 0          // counter
 var _C = {}         // clients  
 var _t = ~process.argv.indexOf('-t')
@@ -33,7 +33,7 @@ var _i = ~process.argv.indexOf('-i')
          : 1000
 
 console.log('--------------------------------')
-var startInfo = { version:require('../package.json').version
+var startInfo = { version:require('../../package.json').version
                 , time:Date().toString()
                 , port:_p }
 if (_startClients) {
