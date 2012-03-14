@@ -404,3 +404,26 @@ ME.reconnect = function(done) {
   })
 }
 
+ME['multiple sockets'] = function(done) {
+  var port = ~~(Math.random()*50000)+10000
+  var unixsocket = __dirname+'/server.socket'
+  var serverVat = sv()
+  var client1Vat = sv()
+  var client2Vat = sv()
+  serverVat.listen(port)
+  serverVat.listen(unixsocket)
+  serverVat.onAny(common.ee2log('servervat'))
+  var client1 = client1Vat.connect(unixsocket,function(r1,s1){
+    var client2 = client2Vat.connect(port,function(r2,s2){
+      r2.on('set',function(k,v){
+        assert.equal('foo',k)
+        assert.equal('bar',v)
+        fs.unlink(unixsocket,done)
+      })
+      setTimeout(function(){
+        r1.set('foo','bar')
+      },200)
+    })
+  })
+}
+

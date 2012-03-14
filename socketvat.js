@@ -54,22 +54,31 @@ p.listen = function() {
     }
   })
 
-  opts.host = opts.host || '0.0.0.0'
-  if (!opts.port) throw new Error('no port defined')
-
+  if (!opts.port && !opts.host) 
+    throw new Error('no port or path defined') 
+  
+  if (opts.port) opts.host = opts.host || '0.0.0.0'
+  else opts.path = opts.host
+  
   var self = this
   var server
-  if (opts.tls.key && opts.tls.cert){
+  if (opts.path) {
+    server = nss.createServer(function(s){self.initSocket(s,cb)})
+    server.listen(opts.path)
+  }
+  else if (opts.tls.key && opts.tls.cert){
     opts.tls.type = 'tls'
     server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)}) 
     server = tls.createServer(opts.tls,function(s){
-      var nssServer = new nss.NsSocket(s,{type:'tcp4'})
+      var nssServer = new nss.NsSocket(s,{type:'tcp4'}) // not sure about that
       self.initSocket(nssServer,cb)
     })
+    server.listen(opts.port,opts.host)
   }
-  else
+  else {
     server = nss.createServer(function(s){self.initSocket(s,cb)})
-  server.listen(opts.port,opts.host)
+    server.listen(opts.port,opts.host)
+  }
   return server
 }
 
@@ -107,13 +116,20 @@ p.connect = function() {
     }
   })
 
-  opts.host = opts.host || '0.0.0.0'
-  if (!opts.port) throw new Error('no port defined')
-
+  if (!opts.port && !opts.host) 
+    throw new Error('no port or path defined') 
+  
+  if (opts.port) opts.host = opts.host || '0.0.0.0'
+  else opts.path = opts.host
+  
   var self = this
   var client
-  if (opts.tls.key && opts.tls.cert) {
-    opts.tls.type = 'tls'
+  if (opts.path) {
+    client = new nss.NsSocket()
+    client.connect(opts.path)
+    self.initSocket(client,cb)
+  }
+  else if (opts.tls.key && opts.tls.cert) {
     client = tls.connect(opts.port,opts.host,opts.tls,function(){
       var nssClient = new nss.NsSocket(client,{type:'tcp4'})
       self.initSocket(nssClient,cb)
@@ -151,6 +167,7 @@ p.connect = function() {
 
 p.initSocket = function(s,cb) {
   var self = this
+  this.sockets.push(s)
   var subs = {}
   var subsListners = {}
   function sub(x) {
@@ -177,6 +194,7 @@ p.initSocket = function(s,cb) {
   }
   s.on('close',function(){
     unsub()
+    self.sockets.splice(self.sockets.indexOf(s),1)
   })
   s.data(self.namespace+'::**',function(d){
     d = d || {}
@@ -282,10 +300,10 @@ p.initSocket = function(s,cb) {
 
 socketvat.listen = function(opts,cb){
   var s = socketvat()
-  socketvat.prototype.listen.call(s,opts,cb)
+  return socketvat.prototype.listen.call(s,opts,cb)
 }
 
 socketvat.connect = function(opts,cb){
   var s = socketvat()
-  socketvat.prototype.connect.call(s,opts,cb)
+  return socketvat.prototype.connect.call(s,opts,cb)
 }

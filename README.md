@@ -26,11 +26,13 @@
 this will start a `net` or `tls`-Server
 
 * `<arg1>`, `<arg2>`, `<arg3>`
-    * `Int` → port
-    * `String` → host
+    * `Int` → `port`
+    * `String` → `host` (or `path` if no port is defined, start a 
+      unix-socket-server)
     * `Object`
-        * `port` → port
-        * `host` → host
+        * `port` → `port`
+        * `host` → `host`
+        * `path` → start a unix-socket-server
         * `key` → start `tls`-Server with that key
         * `cert` → start `tls`-Server with that cert
         * `ca` → start `tls`-Server with that ca
@@ -45,11 +47,13 @@ this will start a `net` or `tls`-Server
 this will create a `net` or `tls`-Connection
 
 * `<arg1>`, `<arg2>`, `<arg3>`
-    * `Int` → port
-    * `String` → host
+    * `Int` → `port`
+    * `String` → `host` (or `path` if no port is defined, start a 
+      unix-socket-connection)
     * `Object`
-        * `port` → port
-        * `host` → host
+        * `port` → `port`
+        * `host` → `host`
+        * `path` → start a unix-socket-connection
         * `key` → start `tls`-Connection with that key
         * `cert` → start `tls`-Connection with that cert
         * `reconnect` → upon connection -drop or -error, connect again in 
