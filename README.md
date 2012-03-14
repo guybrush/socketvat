@@ -87,7 +87,7 @@ s.set('foo','server')
 s.listen(3000,function(remote,socket){
   remote.once('get',function(k,v){
     assert.equal(k,'foo')
-    assert.equal(k,'client')
+    assert.equal(v,'client')
   })
   remote.get('foo')
 })
@@ -96,7 +96,7 @@ c.set('foo','client')
 c.connect(3000,function(remote,socket){
   remote.once('get',function(k,v){
     assert.equal(k,'foo')
-    assert.equal(k,'server')
+    assert.equal(v,'server')
   })
   remote.get('foo')
 })
