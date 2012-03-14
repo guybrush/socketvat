@@ -427,3 +427,37 @@ ME['multiple sockets'] = function(done) {
   })
 }
 
+ME['connect/listen options parsing'] = function(done) {
+  var port = ~~(Math.random()*50000)+10000
+  var host = '0.0.0.0'
+  var unixpath = __dirname+'/server.socket'
+  
+  var fixturesPath = path.resolve(__dirname+'/../node_modules/nssocket/test/fixtures')
+  var key  = fs.readFileSync(fixturesPath+'/ryans-key.pem')
+  var cert = fs.readFileSync(fixturesPath+'/ryans-cert.pem')
+  var ca   = fs.readFileSync(fixturesPath+'/ryans-csr.pem')
+  
+  var opts = [ {server:[port]        , client:[port++]}
+             , {server:[port,host]   , client:[port++,host]}
+             , {server:[{port:port}] , client:[{port:port++}]}
+             , {server:[unixpath]    , client:[unixpath]}
+             , {server:[port,{key:key,cert:cert}] , client:[port,{key:key,cert:cert}]}
+             ]
+             
+  var p = common.plan(0,preDone)
+  opts.forEach(function(x,i){
+    p.todo = p.todo+2
+    x.server.push(function(){p.did()})
+    x.client.push(function(){p.did()})
+    var serverVat = sv()
+    var server = sv.prototype.listen.apply(serverVat, x.server)
+    var clientVat = sv()
+    var client = sv.prototype.connect.apply(clientVat, x.client)  
+  })
+  
+  function preDone() {
+    fs.unlink(unixpath)
+    done()
+  }
+}
+

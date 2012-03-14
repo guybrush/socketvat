@@ -21,7 +21,7 @@
   which will be sent to remote socket, also it will only listen for remote 
   events prefixed by that namespace
 
-### sv.listen(`<arg1>`,[`<arg2>`,[`<arg3>`]],[`<listener>`])
+### sv.listen(`<arg1>`[,`<arg2>`[,`<arg3>`]],[`<listener>`])
 
 this will start a `net` or `tls`-Server
 
@@ -32,17 +32,16 @@ this will start a `net` or `tls`-Server
     * `Object`
         * `port` → `port`
         * `host` → `host`
-        * `path` → start a unix-socket-server
         * `key` → start `tls`-Server with that key
         * `cert` → start `tls`-Server with that cert
         * `ca` → start `tls`-Server with that ca
         
 * `<listener>`
-    * `Function` → connection-listener, returns 2 arguments:
+    * `Function` → connection-listener, will be called with 2 arguments:
         * a object with helper-functions for communication with remote socketvat
         * an instance of `require('nssocket').NsSocket`
 
-### sv.connect(`<arg1>`,[`<arg2>`,[`<arg3>`]],[`<listener>`])
+### sv.connect(`<arg1>`[,`<arg2>`[,`<arg3>`]],[`<listener>`])
 
 this will create a `net` or `tls`-Connection
 
@@ -53,26 +52,42 @@ this will create a `net` or `tls`-Connection
     * `Object`
         * `port` → `port`
         * `host` → `host`
-        * `path` → start a unix-socket-connection
         * `key` → start `tls`-Connection with that key
         * `cert` → start `tls`-Connection with that cert
         * `reconnect` → upon connection -drop or -error, connect again in 
           `opts.reconnect` milliseconds
         
 * `<listener>`
-    * `Function` → connection-listener, returns 2 arguments:
+    * `Function` → connection-listener, will be called with 2 arguments:
         * a object with helper-functions for communication with remote socketvat
         * an instance of `require('nssocket').NsSocket`
 
+### sv.initSocket(`<socket>`[,`<cb>`])
+
+`<socket>` hast to be an instance of `require('nssocket').NsSocket`
+
+```
+var nss = require('nssocket')
+var sv = require('socketvat')
+var serverVat = sv()
+var clientVat = sv()
+var s = nss.createServer(function(s){serverVat.initSocket(s)})
+s.listen(4545)
+var c = new nss.NsSocket()
+clientVat.initSocket(c)
+c.connect(4545)
+```
+        
 ### communication with remote socketvat
 
 ```
-var s = sv()
+var s = require('socketvat')()
+var assert = require('assert')
 s.set('foo','server')
 s.listen(3000,function(remote,socket){
   remote.once('get',function(k,v){
-    assert(k,'foo')
-    assert(k,'client')
+    assert.equal(k,'foo')
+    assert.equal(k,'client')
   })
   remote.get('foo')
 })
@@ -80,8 +95,8 @@ var c = sv()
 c.set('foo','client')
 c.connect(3000,function(remote,socket){
   remote.once('get',function(k,v){
-    assert(k,'foo')
-    assert(k,'server')
+    assert.equal(k,'foo')
+    assert.equal(k,'server')
   })
   remote.get('foo')
 })
