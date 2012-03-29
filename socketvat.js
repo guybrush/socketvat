@@ -179,6 +179,7 @@ p.initSocket = function(s,cb) {
         var split = this.event.split(' ')
         if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
         var event = [self.namespace,'event'].concat(split)
+        if (!s.socket.writable) return unsub()
         s.send(event,{args:args})
       }
       self.on(x,subs[x])
