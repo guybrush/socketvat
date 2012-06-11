@@ -7,7 +7,7 @@ var net = require('net')
 var tls = require('tls')
 var debug = require('debug')('socketvat')
 
-function socketvat(opts) {           
+function socketvat(opts) {
   if (!(this instanceof socketvat)) return new socketvat(opts)
   EE2.call(this,{wildcard:true,delimiter:' ',maxListeners:0})
   ev.call(this)
@@ -33,7 +33,7 @@ p.listen = function() {
         Object.keys(x).forEach(function(k){
           switch(k) {
             case 'port' :
-            case 'host' : 
+            case 'host' :
               opts[k] = x[k]; break;
             case 'key' :
             case 'cert' :
@@ -44,9 +44,9 @@ p.listen = function() {
             case 'rejectUnauthorized' :
             case 'NPNProtocols' :
             case 'SNICallback' :
-            case 'sessionIdContext' : 
+            case 'sessionIdContext' :
               opts.tls[k] = x[k]; break;
-            default : 
+            default :
               console.error(new Error('invalid option "'+k+'"'))
           }
         })
@@ -54,12 +54,12 @@ p.listen = function() {
     }
   })
 
-  if (!opts.port && !opts.host) 
-    throw new Error('no port or path defined') 
-  
+  if (!opts.port && !opts.host)
+    throw new Error('no port or path defined')
+
   if (opts.port) opts.host = opts.host || '0.0.0.0'
   else opts.path = opts.host
-  
+
   var self = this
   var server
   if (opts.path) {
@@ -68,7 +68,7 @@ p.listen = function() {
   }
   else if (opts.tls.key && opts.tls.cert){
     opts.tls.type = 'tls'
-    server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)}) 
+    server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)})
     server = tls.createServer(opts.tls,function(s){
       var nssServer = new nss.NsSocket(s,{type:'tcp4'}) // not sure about that
       self.initSocket(nssServer,cb)
@@ -98,7 +98,7 @@ p.connect = function() {
           switch(k) {
             case 'port' :
             case 'host' :
-            case 'reconnect' : 
+            case 'reconnect' :
               opts[k] = x[k]; break;
             case 'key' :
             case 'cert' :
@@ -106,9 +106,9 @@ p.connect = function() {
             case 'passphrase' :
             case 'NPNProtocols' :
             case 'servername' :
-            case 'socket' : 
+            case 'socket' :
               opts.tls[k] = x[k]; break;
-            default : 
+            default :
               console.error(new Error('invalid option "'+k+'"'))
           }
         })
@@ -116,12 +116,12 @@ p.connect = function() {
     }
   })
 
-  if (!opts.port && !opts.host) 
-    throw new Error('no port or path defined') 
-  
+  if (!opts.port && !opts.host)
+    throw new Error('no port or path defined')
+
   if (opts.port) opts.host = opts.host || '0.0.0.0'
   else opts.path = opts.host
-  
+
   var self = this
   var client
   if (opts.path) {
@@ -151,7 +151,7 @@ p.connect = function() {
         }, opts.reconnect)
       }
     })
-    
+
     client.once('close', function () {
       self.emit('dropped')
       debug('DROPPED')
@@ -177,7 +177,8 @@ p.initSocket = function(s,cb) {
       subs[x] = function(d) {
         var args = [].slice.call(arguments)
         var split = this.event.split(' ')
-        if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
+        if (split[0] == 'keys')
+          args[args.length-2] = args[args.length-2].source
         var event = [self.namespace,'event'].concat(split)
         if (!s.socket.writable) return unsub()
         s.send(event,{args:args})
@@ -219,7 +220,7 @@ p.initSocket = function(s,cb) {
           self.once(args[0],function(){
             var args = [].slice.call(arguments)
             var split = this.event.split(' ')
-            if (split[0] == 'keys') args[args.length-1] = args[args.length-1].source
+            // if (split[0] == 'keys') args[args.length-2] = args[args.length-2].source
             var event = [self.namespace,'event'].concat(split)
             s.send(event,{args:args})
           })
@@ -246,6 +247,30 @@ p.initSocket = function(s,cb) {
     }
   })
   var r = {}
+  // console.log(Object.keys(ev.prototype))
+  ;[ 'die', 'del', 'exists', 'expire', 'expireat', 'keys'/*, 'move', 'object'*/
+   , 'persist', 'randomkey', 'rename', 'renamenx', /*'sort', 'type'*/, 'ttl'
+   , 'append', 'decr', 'decrby', 'get'/*, 'getbit'*/, 'getrange', 'getset', 'incr'
+   , 'incrby', 'mget', 'mset', 'msetnx', 'set'/*, 'setbit', 'setex'*/, 'setnx'
+   , 'setrange', 'strlen', 'hdel', 'hexists', 'hget', 'hgetall', 'hincr'
+   , 'hincrby', 'hdecr', 'hdecrby', 'hkeys', 'hlen', 'hmget' , 'hmset', 'hset'
+   , 'hsetnx', 'hvals', 'lindex', 'linsert', 'llen', 'lpop', 'lpush', 'lpushx'
+   , 'lrange', 'lrem', 'lset', 'ltrim', 'rpop', 'rpoplpush', 'rpush', 'rpushx'
+   , 'dump', 'swap', 'findin'
+   ].forEach(function(m){
+    r[m] = function(){
+      var args = [].slice.call(arguments)
+      var cb = typeof args[args.length-1] == 'function'
+               ? args.pop() : null
+      // s.send([self.namespace,'method',m].concat(args),cb)
+      s.send([self.namespace,'method',m],{args:args},cb)
+    }
+  })
+  r.keys = function(){
+    var args = [].slice.call(arguments)
+    if (args[0] instanceof RegExp) args[0] = args[0].source
+    s.send([self.namespace,'method','keys'],{args:args})
+  }
   r.on = r.subscribe = function(event,cb,_cb){
     event = event.split(' ').join('::')
     s.data(self.namespace+'::event::'+event,function(d){
@@ -277,25 +302,6 @@ p.initSocket = function(s,cb) {
   r.offAny = function(_cb){
     s.send([self.namespace,'method','offAny'],{args:[]},_cb)
   }
-  // console.log(Object.keys(ev.prototype))
-  ;[ 'die', 'del', 'exists', 'expire', 'expireat', 'keys'/*, 'move', 'object'*/
-   , 'persist', 'randomkey', 'rename', 'renamenx', /*'sort', 'type'*/, 'ttl'
-   , 'append', 'decr', 'decrby', 'get'/*, 'getbit'*/, 'getrange', 'getset', 'incr'
-   , 'incrby', 'mget', 'mset', 'msetnx', 'set'/*, 'setbit', 'setex'*/, 'setnx'
-   , 'setrange', 'strlen', 'hdel', 'hexists', 'hget', 'hgetall', 'hincr'
-   , 'hincrby', 'hdecr', 'hdecrby', 'hkeys', 'hlen', 'hmget' , 'hmset', 'hset'
-   , 'hsetnx', 'hvals', 'lindex', 'linsert', 'llen', 'lpop', 'lpush', 'lpushx'
-   , 'lrange', 'lrem', 'lset', 'ltrim', 'rpop', 'rpoplpush', 'rpush', 'rpushx'
-   , 'dump', 'swap', 'findin'
-   ].forEach(function(m){
-    r[m] = function(){
-      var args = [].slice.call(arguments)
-      var cb = typeof args[args.length-1] == 'function'
-               ? args.pop() : null
-      // s.send([self.namespace,'method',m].concat(args),cb)
-      s.send([self.namespace,'method',m],{args:args},cb)
-    }
-  })
   cb && cb(r,s)
 }
 

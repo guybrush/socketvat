@@ -32,145 +32,149 @@ var common =
 //  , 'hsetnx', 'hvals', 'lindex', 'linsert', 'llen', 'lpop', 'lpush', 'lpushx'
 //  , 'lrange', 'lrem', 'lset', 'ltrim', 'rpop', 'rpoplpush', 'rpush', 'rpushx'
 //  , 'dump', 'swap', 'findin' ]
-var remoteSamples =                                        
-[ { name:'del'       , methods:[['set','foo','bar']          
+var remoteSamples =
+[ { name:'del'       , methods:[['set','foo','bar']
                                ,['del','foo']]               , events:[['del','foo']]                    }
-// die - does not emit events                                                                                                  
-, { name:'exists'    , methods:[['set','foo','bar']                                                      
-                               ,['exists','foo']                                                         
-                               ,['exists','bar']]            , events:[['exists foo',true]               
+// die - does not emit events
+, { name:'exists'    , methods:[['set','foo','bar']
+                               ,['exists','foo']
+                               ,['exists','bar']]            , events:[['exists foo',true]
                                                                       ,['exists bar',false]]             }
-, { name:'expire'    , methods:[['set','foo','bar']                                                      
+, { name:'expire'    , methods:[['set','foo','bar']
                                ,['expire','foo',100]]        , events:[['expire','foo',100]]             }
-, { name:'expireat'  , methods:[['set','foo','bar']                                               
-                               ,['expireat','foo'                                                 
+, { name:'expireat'  , methods:[['set','foo','bar']
+                               ,['expireat','foo'
                                 ,common.timeTrigger()+100]]  , events:[['expireat','foo'
-                                                                       ,common.timeTriggered+100]]       }                                                                                   
-, { name:'keys'      , methods:[['set','foo','bar']                                               
-                               ,['keys','.*']]               , events:[['keys',['foo'],/.*/]]            }
+                                                                       ,common.timeTriggered+100]]       }
+, { name:'keys'      , methods:[['set','foo','bar']
+                               ,['set','one',1]
+                               ,['set','two',2]
+                               ,['keys',/one|two/]
+                               ,['keys','one|two']]          , events:[['keys',/one|two/,['one','two']]
+                                                                      ,['keys',/one|two/,['one','two']]] }
 // not sure about move..
-// , { name:'move'      , methods:[['foo','bar']                                                  
-//                                ,['move','foo',common.vat]] , events:[['move','foo',common.vat]       
-//                                                                     ,['move foo',common.vat]]      }                                                                                        
+// , { name:'move'      , methods:[['foo','bar']
+//                                ,['move','foo',common.vat]] , events:[['move','foo',common.vat]
+//                                                                     ,['move foo',common.vat]]      }
 // object - not implemented yet
-, { name:'persist'   , methods:[['set','foo','bar',100]                                                    
-                               ,['persist','foo']]           , events:[['persist','foo'] 
-                                                                      ,['persist foo']]                  } 
-, { name:'randomkey' , methods:[['set','a',1]                                                            
-                               ,['set','b',2]                                                            
-                               ,['set','c',3]                                                            
-                               ,['randomkey']]               , eventsOr:[['randomkey','a']               
-                                                                        ,['randomkey','b']               
+, { name:'persist'   , methods:[['set','foo','bar',100]
+                               ,['persist','foo']]           , events:[['persist','foo']
+                                                                      ,['persist foo']]                  }
+, { name:'randomkey' , methods:[['set','a',1]
+                               ,['set','b',2]
+                               ,['set','c',3]
+                               ,['randomkey']]               , eventsOr:[['randomkey','a']
+                                                                        ,['randomkey','b']
                                                                         ,['randomkey','c']]              }
-, { name:'rename'    , methods:[['set','a',1]                                                            
-                               ,['rename','a','b']]          , events:[['rename','a','b']                
-                                                                      ,['rename a','b']]                 } 
-// renamenx                                                                                              
-// sort - not implemented yet                                                                                                 
-// type - does not emit events                                                                                               
-, { name:'ttl'       , methods:[['set','foo','bar']                                                      
-                               ,['expire','foo',60]                                                      
-                               ,['ttl','foo']]               , events:[['ttl','foo',60]                  
+, { name:'rename'    , methods:[['set','a',1]
+                               ,['rename','a','b']]          , events:[['rename','a','b']
+                                                                      ,['rename a','b']]                 }
+// renamenx
+// sort - not implemented yet
+// type - does not emit events
+, { name:'ttl'       , methods:[['set','foo','bar']
+                               ,['expire','foo',60]
+                               ,['ttl','foo']]               , events:[['ttl','foo',60]
                                                                       ,['ttl foo',60]]                   }
-, { name:'append'    , methods:[['set','foo','foo']                                               
-                               ,['append','foo','bar']]      , events:[['append','foo','bar','foobar']]  }
-, { name:'decr(by)'  , methods:[['set','foo',3]                                               
-                               ,['decr','foo']]              , events:[['decr','foo',2]                  
-                                                                      ,['decr foo',2]                  
-                                                                      ,['decrby','foo',1,2]                  
+, { name:'append'    , methods:[['set','foo','foo']
+                               ,['append','foo','bar']]      , events:[['append','foo','bar',6]]  }
+, { name:'decr(by)'  , methods:[['set','foo',3]
+                               ,['decr','foo']]              , events:[['decr','foo',2]
+                                                                      ,['decr foo',2]
+                                                                      ,['decrby','foo',1,2]
                                                                       ,['decrby foo',1,2]]               }
 // decrby
-, { name:'get'       , methods:[['set','foo','bar']                                               
+, { name:'get'       , methods:[['set','foo','bar']
                                ,['get','foo']]               , events:[['get','foo','bar']]              }
-// getbit - not implemented yet                                                                                             
-, { name:'getrange'  , methods:[['set','foo','hello world!']                                               
-                               ,['getrange','foo',6,11]]     , events:[['getrange','foo','world']]       }                                                                                              
-// getset - does not emit events                                                                                               
-, { name:'incr(by)'  , methods:[['set','foo',3]                                               
-                               ,['incr','foo']]              , events:[['incr','foo',4]                  
-                                                                      ,['incr foo',4]                  
-                                                                      ,['incrby','foo',1,4]                  
-                                                                      ,['incrby foo',1,4]]               }                                                                                                 
-// incrby                                                                                                
+// getbit - not implemented yet
+, { name:'getrange'  , methods:[['set','foo','hello world!']
+                               ,['getrange','foo',6,11]]     , events:[['getrange','foo',6,11,'world']]  }
+// getset - does not emit events
+, { name:'incr(by)'  , methods:[['set','foo',3]
+                               ,['incr','foo']]              , events:[['incr','foo',4]
+                                                                      ,['incr foo',4]
+                                                                      ,['incrby','foo',1,4]
+                                                                      ,['incrby foo',1,4]]               }
+// incrby
 , { name:'mget'      , methods:[['set','foo','hello world!']
                                ,['set','bar',42]
-                               ,['mget','foo','bar']]        , events:[['mget',['hello world!',42]]]     }                                                                                                 
-// mset                                                                                                  
-// msetnx                                                                                                
+                               ,['mget','foo','bar']]        , events:[['mget','foo','bar',['hello world!',42]]]     }
+// mset
+// msetnx
 , { name:'set'       , methods:[['set','foo','bar']]         , events:[['set','foo','bar']]              }
-// setbit - not implemented yet                                                                                               
-// setex - not implemented yet                                                                                                
-// setnx                                                                                                  
-// setrange                                                                                              
-// strlen                                                                                                
-, { name:'hdel'      , methods:[['hset','hash','a',1]                                                    
-                               ,['hdel','hash','a']]         , events:[['hdel','hash','a']               
+// setbit - not implemented yet
+// setex - not implemented yet
+// setnx
+// setrange
+// strlen
+, { name:'hdel'      , methods:[['hset','hash','a',1]
+                               ,['hdel','hash','a']]         , events:[['hdel','hash','a']
                                                                       ,['hdel hash','a']]                }
 // hexists
 // hget
 // hgetall
-, { name:'hincr'     , methods:[['hset','foo','a',2]                                             
-                               ,['hincr','foo','a']]         , events:[['hincr','foo','a',3]      
-                                                                      ,['hincrby','foo','a',1,3]      
-                                                                      ,['hincr foo','a',3]      
+, { name:'hincr'     , methods:[['hset','foo','a',2]
+                               ,['hincr','foo','a']]         , events:[['hincr','foo','a',3]
+                                                                      ,['hincrby','foo','a',1,3]
+                                                                      ,['hincr foo','a',3]
                                                                       ,['hincrby foo','a',1,3]]          }
 // hincrby
 // hdecr
 // hdecrby
-, { name:'hkeys'     , methods:[['hset','foo','a',1]                                             
-                               ,['hset','foo','b',2]                                             
-                               ,['hset','foo','c',3]                                             
-                               ,['hkeys','foo']]             , events:[['hkeys','foo',['a','b','c']]      
+, { name:'hkeys'     , methods:[['hset','foo','a',1]
+                               ,['hset','foo','b',2]
+                               ,['hset','foo','c',3]
+                               ,['hkeys','foo']]             , events:[['hkeys','foo',['a','b','c']]
                                                                       ,['hkeys foo',['a','b','c']]]      }
-, { name:'hlen'      , methods:[['hset','foo','a',1]                                             
-                               ,['hset','foo','b',2]                                             
-                               ,['hset','foo','c',3]                                             
-                               ,['hlen','foo']]              , events:[['hlen','foo',3]      
+, { name:'hlen'      , methods:[['hset','foo','a',1]
+                               ,['hset','foo','b',2]
+                               ,['hset','foo','c',3]
+                               ,['hlen','foo']]              , events:[['hlen','foo',3]
                                                                       ,['hlen foo',3]]                   }
-// hmget                                                                                                 
-// hmset                                                                                                 
-, { name:'hset'      , methods:[['hset','hash','a',1]]       , events:[['hset','hash','a',1]             
-                                                                      ,['hset hash','a',1]]              }
-// hsetnx                                                                                                
-, { name:'hvals'     , methods:[['hset','foo','a',1]                                             
-                               ,['hset','foo','b',2]                                             
-                               ,['hset','foo','c',3]                                             
-                               ,['hvals','foo']]             , events:[['hvals','foo',[1,2,3]]            
+// hmget
+// hmset
+, { name:'hset'      , methods:[['hset','hash','a',1]]       , events:[['hset','hash','a',1,false]
+                                                                      ,['hset hash','a',1,false]]              }
+// hsetnx
+, { name:'hvals'     , methods:[['hset','foo','a',1]
+                               ,['hset','foo','b',2]
+                               ,['hset','foo','c',3]
+                               ,['hvals','foo']]             , events:[['hvals','foo',[1,2,3]]
                                                                       ,['hvals foo',[1,2,3]]]            }
-, { name:'lindex'    , methods:[['rpush','mylist','foo']                                                 
-                               ,['lindex','mylist',0]]       , events:[['lindex','mylist',0,'foo']       
+, { name:'lindex'    , methods:[['rpush','mylist','foo']
+                               ,['lindex','mylist',0]]       , events:[['lindex','mylist',0,'foo']
                                                                       ,['lindex mylist',0,'foo']]        }
 // linsert
-, { name:'llen'      , methods:[['rpush','mylista','one']                                             
-                               ,['rpush','mylista','thow']                                             
-                               ,['rpush','mylista','three']                                             
-                               ,['llen','mylista']]           , events:[['llen','mylista',3]      
+, { name:'llen'      , methods:[['rpush','mylista','one']
+                               ,['rpush','mylista','thow']
+                               ,['rpush','mylista','three']
+                               ,['llen','mylista']]          , events:[['llen','mylista',3]
                                                                       ,['llen mylista',3]]               }
-// lpop                                                                                                  
-// lpush                                                                                                 
-// lpushx                                                                                                
-// lrange                                                                                                
-// lrem                                                                                                  
-, { name:'lset'      , methods:[['rpush','mylist','foo']                                                 
-                               ,['lset','mylist',0,'one']]   , events:[['lset','mylist',0,'one']         
+// lpop
+// lpush
+// lpushx
+// lrange
+// lrem
+, { name:'lset'      , methods:[['rpush','mylist','foo']
+                               ,['lset','mylist',0,'one']]   , events:[['lset','mylist',0,'one']
                                                                       ,['lset mylist',0,'one']]          }
-// ltrim                                                                                                 
-// rpop                                                                                                  
-// rpoplpush                                                                                             
-// rpush                                                                                                 
-, { name:'rpushx'    , methods:[['rpush','mylist','one']                                                 
-                               ,['rpushx','mylist','two']                                                 
+// ltrim
+// rpop
+// rpoplpush
+// rpush
+, { name:'rpushx'    , methods:[['rpush','mylist','one']
+                               ,['rpushx','mylist','two']
                                ,['rpushx','myotherlist'
-                                ,'three']]                   , events:[['rpushx','mylist','two']         
-                                                                      ,['rpushx mylist','two']]          }                                                                                               
-// dump                                                                                                  
-, { name:'swap'      , methods:[['set','a',1]                                                            
-                               ,['set','b',2]                                                            
-                               ,['swap','a','b']]            , events:[['swap','a','b']        
+                                ,'three']]                   , events:[['rpushx','mylist','two',2]
+                                                                      ,['rpushx mylist','two',2]]        }
+// dump
+, { name:'swap'      , methods:[['set','a',1]
+                               ,['set','b',2]
+                               ,['swap','a','b']]            , events:[['swap','a','b']
                                                                       ,['swap a','b']]                   }
-, { name:'findin'    , methods:[['set','foo','hello']                                                    
-                               ,['findin','foo','ll']]       , events:[['findin','foo','ll',2]           
-                                                                      ,['findin foo','ll',2]]            } 
+, { name:'findin'    , methods:[['set','foo','hello']
+                               ,['findin','foo','ll']]       , events:[['findin','foo','ll',2]
+                                                                      ,['findin foo','ll',2]]            }
 ]
 
 ME.remote = {}
@@ -222,31 +226,31 @@ remoteSamples.forEach(function(x){
         var currE = e.shift()
         common.clientRemotes[0].remote.once(currE,function(){
           // this is because of eventvat.keys(regexp)
-          if (e[e.length-1] instanceof RegExp)
-            e[e.length-1] = e[e.length-1].source 
+          // if (e[e.length-2] instanceof RegExp) e[e.length-2] = e[e.length-2].source
+
           var args = [].slice.call(arguments)
           // this is because eventvat.swap()
-          if (args[args.length-1] === null) 
+          if (args[args.length-1] === null)
             args.pop()
           assert.deepEqual(args,e)
           p.did()
         })
         common.serverRemotes[0].remote.once(currE,function(){
           // this is because of eventvat.keys(regexp)
-          if (e[e.length-1] instanceof RegExp) 
-            e[e.length-1] = e[e.length-1].source
+          // if (e[e.length-2] instanceof RegExp) e[e.length-2] = e[e.length-2].source
+
           var args = [].slice.call(arguments)
           // this is because eventvat.swap()
-          if (args[args.length-1] === null) 
-            args.pop() 
+          if (args[args.length-1] === null)
+            args.pop()
           assert.deepEqual(args,e)
           p.did()
         })
         common.clientVat.once(currE,function(){
           var args = [].slice.call(arguments)
           // this is because eventvat.swap()
-          if (args[args.length-1] === undefined) args.pop() 
-          assert.deepEqual(args,e)      
+          if (args[args.length-1] === undefined) args.pop()
+          assert.deepEqual(args,e)
           p.did()
         })
         common.serverVat.once(currE,function(){
@@ -267,7 +271,7 @@ remoteSamples.forEach(function(x){
         common.clientRemotes[0].remote.once(currE,function(){
           assert.ok(!~([].slice.call(arguments).indexOf(ee)))
           p.did()
-        })                                                                                     
+        })
         common.serverRemotes[0].remote.once(currE,function(){
           assert.ok(!~([].slice.call(arguments).indexOf(ee)))
           p.did()
@@ -431,19 +435,19 @@ ME['connect/listen options parsing'] = function(done) {
   var port = ~~(Math.random()*50000)+10000
   var host = '0.0.0.0'
   var unixpath = __dirname+'/server.socket'
-  
+
   var fixturesPath = path.resolve(__dirname+'/../node_modules/nssocket/test/fixtures')
   var key  = fs.readFileSync(fixturesPath+'/ryans-key.pem')
   var cert = fs.readFileSync(fixturesPath+'/ryans-cert.pem')
   var ca   = fs.readFileSync(fixturesPath+'/ryans-csr.pem')
-  
+
   var opts = [ {server:[port]        , client:[port++]}
              , {server:[port,host]   , client:[port++,host]}
              , {server:[{port:port}] , client:[{port:port++}]}
              , {server:[unixpath]    , client:[unixpath]}
              , {server:[port,{key:key,cert:cert}] , client:[port,{key:key,cert:cert}]}
              ]
-             
+
   var p = common.plan(0,preDone)
   opts.forEach(function(x,i){
     p.todo = p.todo+2
@@ -452,9 +456,9 @@ ME['connect/listen options parsing'] = function(done) {
     var serverVat = sv()
     var server = sv.prototype.listen.apply(serverVat, x.server)
     var clientVat = sv()
-    var client = sv.prototype.connect.apply(clientVat, x.client)  
+    var client = sv.prototype.connect.apply(clientVat, x.client)
   })
-  
+
   function preDone() {
     fs.unlink(unixpath)
     done()
