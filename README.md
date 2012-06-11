@@ -23,7 +23,7 @@
 
 ### sv.initSocket(`<socket>`[,`<cb>`])
 
-`<socket>` hast to be an instance of `require('nssocket').NsSocket`
+`<socket>` has to be an instance of `require('nssocket').NsSocket`
 
 ```
 var nss = require('nssocket')
@@ -83,8 +83,10 @@ this will create a `net` or `tls`-Connection
 ### simple
 
 ```
-var s = require('socketvat')()
+var sv = require('../socketvat')
 var assert = require('assert')
+// server
+var s = sv()
 s.set('foo','server')
 s.listen(3000,function(remote,socket){
   remote.once('get',function(k,v){
@@ -93,6 +95,7 @@ s.listen(3000,function(remote,socket){
   })
   remote.get('foo')
 })
+// client
 var c = sv()
 c.set('foo','client')
 c.connect(3000,function(remote,socket){
