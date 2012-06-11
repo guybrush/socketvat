@@ -21,6 +21,22 @@
   which will be sent to remote socket, also it will only listen for remote 
   events prefixed by that namespace
 
+### sv.initSocket(`<socket>`[,`<cb>`])
+
+`<socket>` hast to be an instance of `require('nssocket').NsSocket`
+
+```
+var nss = require('nssocket')
+var sv = require('socketvat')
+var serverVat = sv()
+var clientVat = sv()
+var s = nss.createServer(function(s){serverVat.initSocket(s)})
+s.listen(4545)
+var c = new nss.NsSocket()
+clientVat.initSocket(c)
+c.connect(4545)
+```
+  
 ### sv.listen(`<arg1>`[,`<arg2>`[,`<arg3>`]],[`<listener>`])
 
 this will start a `net` or `tls`-Server
@@ -61,24 +77,10 @@ this will create a `net` or `tls`-Connection
     * `Function` → connection-listener, will be called with 2 arguments:
         * a object with helper-functions for communication with remote socketvat
         * an instance of `require('nssocket').NsSocket`
-
-### sv.initSocket(`<socket>`[,`<cb>`])
-
-`<socket>` hast to be an instance of `require('nssocket').NsSocket`
-
-```
-var nss = require('nssocket')
-var sv = require('socketvat')
-var serverVat = sv()
-var clientVat = sv()
-var s = nss.createServer(function(s){serverVat.initSocket(s)})
-s.listen(4545)
-var c = new nss.NsSocket()
-clientVat.initSocket(c)
-c.connect(4545)
-```
         
-### communication with remote socketvat
+## examples
+        
+### simple
 
 ```
 var s = require('socketvat')()
@@ -102,10 +104,10 @@ c.connect(3000,function(remote,socket){
 })
 ```
 
-## example
+### verbose
 
 ``` javascript
-var sv = require('socketvat')
+var sv = require('../socketvat')
 
 var serverVat = sv()
 var server = serverVat.listen(3000,function(r,s){
@@ -132,12 +134,12 @@ var client = clientVat.connect(3000,function(r,s){
 
 serverVat.on('**',ee2log('serverVat'))
 serverVat.once('set client',function(){
-  console.log('---- serverVat once set *:',this.event,'→',[].slice.call(arguments))
+  console.log('---- serverVat once "set client":',this.event,'→',[].slice.call(arguments))
 })
 
 clientVat.on('**',ee2log('clientVat'))
 clientVat.once('set *',function(){
-  console.log('---- clientVat once set *:',this.event,'→',[].slice.call(arguments))
+  console.log('---- clientVat once "set *":',this.event,'→',[].slice.call(arguments))
 })
 
 serverVat.set('foo','bar')
@@ -157,7 +159,7 @@ output:
 ```
 serverVat    : set foo                         → [ 'bar' ]
 serverVat    : set                             → [ 'foo', 'bar' ]
----- clientVat once set *: set foo → [ 'bar' ]
+---- clientVat once "set *": set foo → [ 'bar' ]
 clientVat    : set foo                         → [ 'bar' ]
 clientVat    : set                             → [ 'foo', 'bar' ]
 clientSocket : start                           → []
@@ -165,14 +167,14 @@ clientSocket : start                           → []
 serverSocket : start                           → []
 serverSocket : data socketvat method onAny     → [ { args: [] } ]
 serverSocket : data socketvat method set       → [ { args: [ 'client', 'y' ] } ]
----- serverVat once set *: set client → [ 'y' ]
+---- serverVat once "set client": set client → [ 'y' ]
 serverVat    : set client                      → [ 'y' ]
 serverVat    : set                             → [ 'client', 'y' ]
 serverSocket : data socketvat method get       → [ { args: [ 'client' ] } ]
 serverVat    : get client                      → [ 'y' ]
 serverVat    : get                             → [ 'client', 'y' ]
 serverSocket : data socketvat method keys      → [ { args: [ 'client' ] } ]
-serverVat    : keys                            → [ [ 'client' ], /client/ ]
+serverVat    : keys                            → [ /client/, [ 'client' ] ]
 clientSocket : data socketvat method onAny     → [ { args: [] } ]
 clientSocket : data socketvat method set       → [ { args: [ 'server', 'x' ] } ]
 clientVat    : set server                      → [ 'x' ]
@@ -185,8 +187,8 @@ clientSocket : data socketvat event get client → [ { args: [ 'y' ] } ]
 clientRemote : get client                      → [ 'y' ]
 clientSocket : data socketvat event get        → [ { args: [ 'client', 'y' ] } ]
 clientRemote : get                             → [ 'client', 'y' ]
-clientSocket : data socketvat event keys       → [ { args: [ [Object], 'client' ] } ]
-clientRemote : keys                            → [ [ 'client' ], 'client' ]
+clientSocket : data socketvat event keys       → [ { args: [ 'client', [Object] ] } ]
+clientRemote : keys                            → [ 'client', [ 'client' ] ]
 serverSocket : data socketvat event set server → [ { args: [ 'x' ] } ]
 serverRemote : set server                      → [ 'x' ]
 serverSocket : data socketvat event set        → [ { args: [ 'server', 'x' ] } ]
