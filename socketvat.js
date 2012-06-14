@@ -9,7 +9,7 @@ var debug = require('debug')('socketvat')
 
 function socketvat(opts) {
   if (!(this instanceof socketvat)) return new socketvat(opts)
-  EE2.call(this,{wildcard:true,delimiter:' ',maxListeners:0})
+  EE2.call(this,{wildcard:true,delimiter:' '})
   ev.call(this)
   opts = opts || {}
   this.namespace = opts.namespace || 'socketvat'
@@ -83,10 +83,10 @@ p.listen = function() {
 }
 
 p.connect = function() {
+  var _args = [].slice.call(arguments)
   var args = [].slice.call(arguments)
-  debug('connecting',args)
   var cb = typeof args[args.length-1] == 'function'
-           ? args[args.length-1]
+           ? args.pop()
            : function(){}
   var opts = {tls:{}}
   args.forEach(function(x){
@@ -115,7 +115,7 @@ p.connect = function() {
       }
     }
   })
-
+  
   if (!opts.port && !opts.host)
     throw new Error('no port or path defined')
 
@@ -126,8 +126,9 @@ p.connect = function() {
   var client
   if (opts.path) {
     client = new nss.NsSocket()
-    client.connect(opts.path)
-    self.initSocket(client,cb)
+    client.connect(opts.path,function(){
+      self.initSocket(client,cb)
+    })
   }
   else if (opts.tls.key && opts.tls.cert) {
     client = tls.connect(opts.port,opts.host,opts.tls,function(){
@@ -137,28 +138,19 @@ p.connect = function() {
   }
   else {
     client = new nss.NsSocket()
-    client.connect(opts.port, opts.host)
-    self.initSocket(client,cb)
-  }
-  if (opts.reconnect) {
-    client.on('error', function (err) {
-      if (err.code === 'ECONNREFUSED') {
-        self.emit('refused')
-        debug('ECONNREFUSED')
-        setTimeout(function () {
-          self.emit('reconnecting')
-          self.connect.apply(self, args)
-        }, opts.reconnect)
-      }
+    client.connect(opts.port, opts.host, function(){
+      self.initSocket(client,cb)
     })
-
+  }
+  client.on('error', function (err) {debug('socket error')})
+  if (opts.reconnect) {
     client.once('close', function () {
-      self.emit('dropped')
-      debug('DROPPED')
+      debug('socket closed',opts.reconnect)
+      client.destroy()
       setTimeout(function () {
         debug('reconnecting')
         self.emit('reconnecting')
-        self.connect.apply(self, args)
+        self.connect.apply(self, _args)
       }, opts.reconnect)
     })
   }
@@ -166,6 +158,8 @@ p.connect = function() {
 }
 
 p.initSocket = function(s,cb) {
+  debug('init socket')
+  this.emit('connect')
   var self = this
   this.sockets.push(s)
   var subs = {}
@@ -196,6 +190,7 @@ p.initSocket = function(s,cb) {
   }
   s.on('close',function(){
     unsub()
+    s.destroy()
     self.sockets.splice(self.sockets.indexOf(s),1)
   })
   s.data(self.namespace+'::**',function(d){
@@ -248,7 +243,7 @@ p.initSocket = function(s,cb) {
   })
   var r = {}
   // console.log(Object.keys(ev.prototype))
-  ;[ 'die', 'del', 'exists', 'expire', 'expireat', 'keys'/*, 'move', 'object'*/
+  ;[ 'die', 'del', 'exists', 'expire', 'expireat', /*'keys', 'move', 'object'*/
    , 'persist', 'randomkey', 'rename', 'renamenx', /*'sort', 'type'*/, 'ttl'
    , 'append', 'decr', 'decrby', 'get'/*, 'getbit'*/, 'getrange', 'getset', 'incr'
    , 'incrby', 'mget', 'mset', 'msetnx', 'set'/*, 'setbit', 'setex'*/, 'setnx'
