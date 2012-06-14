@@ -1,6 +1,8 @@
 var ME = module.exports = {}
 var sv = require('../socketvat')
 var ev = require('eventvat')
+var nss = require('nssocket')
+var net = require('net')
 var EE2 = require('eventemitter2').EventEmitter2
 var fs = require('fs')
 var path = require('path')
@@ -388,18 +390,17 @@ ME.tls = function(done) {
 }
 
 ME.reconnect = function(done) {
-  this.timeout(5000)
+  this.timeout(20000)
   var p = common.plan(10,done)
   var port = ~~(Math.random()*50000)+10000
   var serverVat = sv()
   var clientVat = sv()
   var client = clientVat.connect({port:port,reconnect:100})
-  client.on('connect',common.ee2log('client connect'))
-  clientVat.onAny(common.ee2log('clientVat **'))
   clientVat.once('reconnecting',function(){
     var server = serverVat.listen(port,function(r,s){
       debug('client connected')
-      server.close()
+      s.destroy()
+      server.close() // why doesnt close also destroy the socket?
       var server2 = serverVat.listen(port,function(r,s){
         debug('client connected again')
         done()

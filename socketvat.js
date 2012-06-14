@@ -142,15 +142,25 @@ p.connect = function() {
       self.initSocket(client,cb)
     })
   }
-  client.on('error', function (err) {debug('socket error')})
+  client.on('error', function (err) {debug('socket error',err)})
   if (opts.reconnect) {
+    // client.on('error', function (err) {
+    //   if (err.code === 'ECONNREFUSED') {
+    //     self.emit('refused')
+    //     debug('ECONNREFUSED')
+    //     setTimeout(function () {
+    //       self.emit('reconnecting')
+    //       self.connect.apply(self, args)
+    //     }, opts.reconnect)
+    //   }
+    // })
     client.once('close', function () {
       debug('socket closed',opts.reconnect)
       client.destroy()
       setTimeout(function () {
         debug('reconnecting')
         self.emit('reconnecting')
-        self.connect.apply(self, _args)
+        socketvat.prototype.connect.apply(self, args)
       }, opts.reconnect)
     })
   }
@@ -188,6 +198,9 @@ p.initSocket = function(s,cb) {
       delete subs[y]
     })
   }
+  s.on('error',function(err){
+    console.log('err',err)
+  })
   s.on('close',function(){
     unsub()
     s.destroy()
