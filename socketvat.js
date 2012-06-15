@@ -22,7 +22,7 @@ var p = socketvat.prototype = new ev
 p.listen = function() {
   var args = [].slice.call(arguments)
   var cb = typeof args[args.length-1] == 'function'
-           ? args[args.length-1]
+           ? args.pop()
            : function(){}
   var opts = {tls:{}}
   args.forEach(function(x){
