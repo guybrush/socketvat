@@ -152,7 +152,7 @@ p.connect = function() {
         debug('ECONNREFUSED')
         setTimeout(function () {
           self.emit('reconnecting')
-          self.connect.apply(self, args)
+          self.connect.apply(self, _args)
         }, opts.reconnect)
       }
     }
@@ -164,7 +164,7 @@ p.connect = function() {
       setTimeout(function () {
         debug('reconnecting')
         self.emit('reconnecting')
-        socketvat.prototype.connect.apply(self, args)
+        socketvat.prototype.connect.apply(self, _args)
       }, opts.reconnect)
     })   
   }
