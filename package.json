@@ -1,6 +1,6 @@
 {
   "name": "socketvat",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "eventvat + nssocket",
   "main": "socketvat.js",
   "scripts": {
