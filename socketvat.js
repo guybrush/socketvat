@@ -128,41 +128,45 @@ p.connect = function() {
     client = new nss.NsSocket()
     client.connect(opts.path,function(){
       self.initSocket(client,cb)
+      if (opts.reconnect) applyReconnect()
     })
   }
   else if (opts.tls.key && opts.tls.cert) {
     client = tls.connect(opts.port,opts.host,opts.tls,function(){
       var nssClient = new nss.NsSocket(client,{type:'tcp4'})
       self.initSocket(nssClient,cb)
+      if (opts.reconnect) applyReconnect()
     })
   }
   else {
     client = new nss.NsSocket()
     client.connect(opts.port, opts.host, function(){
       self.initSocket(client,cb)
+      if (opts.reconnect) applyReconnect()
     })
   }
-  client.on('error', function (err) {debug('socket error',err)})
-  if (opts.reconnect) {
-    // client.on('error', function (err) {
-    //   if (err.code === 'ECONNREFUSED') {
-    //     self.emit('refused')
-    //     debug('ECONNREFUSED')
-    //     setTimeout(function () {
-    //       self.emit('reconnecting')
-    //       self.connect.apply(self, args)
-    //     }, opts.reconnect)
-    //   }
-    // })
+  client.on('error', function (err) {
+    if (opts.reconnect) {
+      if (err.code === 'ECONNREFUSED') {
+        self.emit('refused')
+        debug('ECONNREFUSED')
+        setTimeout(function () {
+          self.emit('reconnecting')
+          self.connect.apply(self, args)
+        }, opts.reconnect)
+      }
+    }
+  })
+  function applyReconnect() {
     client.once('close', function () {
-      debug('socket closed',opts.reconnect)
+      debug('socket closed')
       client.destroy()
       setTimeout(function () {
         debug('reconnecting')
         self.emit('reconnecting')
         socketvat.prototype.connect.apply(self, args)
       }, opts.reconnect)
-    })
+    })   
   }
   return client
 }
