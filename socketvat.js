@@ -247,7 +247,12 @@ p.initSocket = function(s,cb) {
           unsub(args[0])
           break
         case 'keys':
-          var regex = (new RegExp(args[0]))
+          var regex
+          try {
+            regex = (new RegExp(args[0]))
+          } catch (e) {
+            console.error(e)
+          }
           self.keys(regex)
           break
         default:
