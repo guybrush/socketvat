@@ -82,12 +82,13 @@ p.listen = function() {
   return server
 }
 
+var onConnect
 p.connect = function() {
   var _args = [].slice.call(arguments)
   var args = [].slice.call(arguments)
-  var cb = typeof args[args.length-1] == 'function'
-           ? args.pop()
-           : function(){}
+  onConnect = typeof args[args.length-1] == 'function'
+              ? args.pop()
+              : function(){}
   var opts = {tls:{}}
   args.forEach(function(x){
     if (typeof x === 'string') opts.host = x
@@ -127,21 +128,21 @@ p.connect = function() {
   if (opts.path) {
     client = new nss.NsSocket()
     client.connect(opts.path,function(){
-      self.initSocket(client,cb)
+      self.initSocket(client,onConnect)
       if (opts.reconnect) applyReconnect()
     })
   }
   else if (opts.tls.key && opts.tls.cert) {
     client = tls.connect(opts.port,opts.host,opts.tls,function(){
       var nssClient = new nss.NsSocket(client,{type:'tcp4'})
-      self.initSocket(nssClient,cb)
+      self.initSocket(nssClient,onConnect)
       if (opts.reconnect) applyReconnect()
     })
   }
   else {
     client = new nss.NsSocket()
     client.connect(opts.port, opts.host, function(){
-      self.initSocket(client,cb)
+      self.initSocket(client,onConnect)
       if (opts.reconnect) applyReconnect()
     })
   }
@@ -152,7 +153,7 @@ p.connect = function() {
         debug('ECONNREFUSED')
         setTimeout(function () {
           self.emit('reconnecting')
-          self.connect.apply(self, _args)
+          self.connect.apply(self, args)
         }, opts.reconnect)
       }
     }
@@ -164,7 +165,7 @@ p.connect = function() {
       setTimeout(function () {
         debug('reconnecting')
         self.emit('reconnecting')
-        socketvat.prototype.connect.apply(self, _args)
+        socketvat.prototype.connect.apply(self, args)
       }, opts.reconnect)
     })   
   }
@@ -318,7 +319,6 @@ p.initSocket = function(s,cb) {
   r.offAny = function(_cb){
     s.send([self.namespace,'method','offAny'],{args:[]},_cb)
   }
-  this.emit('remote',r,s)
   cb && cb(r,s)
 }
 
