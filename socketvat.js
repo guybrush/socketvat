@@ -173,7 +173,6 @@ p.connect = function() {
 
 p.initSocket = function(s,cb) {
   debug('init socket')
-  this.emit('connect')
   var self = this
   this.sockets.push(s)
   var subs = {}
@@ -319,6 +318,7 @@ p.initSocket = function(s,cb) {
   r.offAny = function(_cb){
     s.send([self.namespace,'method','offAny'],{args:[]},_cb)
   }
+  this.emit('remote',r,s)
   cb && cb(r,s)
 }
 
