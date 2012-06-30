@@ -203,7 +203,9 @@ p.initSocket = function(s,cb) {
     })
   }
   s.on('error',function(err){
-    console.log('err',err)
+    debug('socket-error',err)
+    s.destroy()
+    self.sockets.splice(self.sockets.indexOf(s),1)
   })
   s.on('close',function(){
     unsub()
