@@ -82,13 +82,13 @@ p.listen = function() {
   return server
 }
 
-var onConnect
 p.connect = function() {
+  var self = this
   var _args = [].slice.call(arguments)
   var args = [].slice.call(arguments)
-  onConnect = typeof args[args.length-1] == 'function'
-              ? args.pop()
-              : function(){}
+  this.onConnect = typeof args[args.length-1] == 'function'
+                 ? args.pop()
+                 : function(){}
   var opts = {tls:{}}
   args.forEach(function(x){
     if (typeof x === 'string') opts.host = x
@@ -128,21 +128,21 @@ p.connect = function() {
   if (opts.path) {
     client = new nss.NsSocket()
     client.connect(opts.path,function(){
-      self.initSocket(client,onConnect)
+      self.initSocket(client,self.onConnect)
       if (opts.reconnect) applyReconnect()
     })
   }
   else if (opts.tls.key && opts.tls.cert) {
     client = tls.connect(opts.port,opts.host,opts.tls,function(){
       var nssClient = new nss.NsSocket(client,{type:'tcp4'})
-      self.initSocket(nssClient,onConnect)
+      self.initSocket(nssClient,self.onConnect)
       if (opts.reconnect) applyReconnect()
     })
   }
   else {
     client = new nss.NsSocket()
     client.connect(opts.port, opts.host, function(){
-      self.initSocket(client,onConnect)
+      self.initSocket(client,self.onConnect)
       if (opts.reconnect) applyReconnect()
     })
   }

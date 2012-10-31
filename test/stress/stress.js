@@ -80,7 +80,10 @@ else {
 }
 
 function createClients(n) {
-  if (n) for (var j=1;j<n;j++) createClients() 
+  if (n) {
+    for (var j=1;j<n;j++) createClients()
+    return
+  }
   var i = _I++
   var c = _C[i] = sv()
   var j = 0
