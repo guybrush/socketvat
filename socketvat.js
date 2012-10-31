@@ -68,9 +68,11 @@ p.listen = function() {
   }
   else if (opts.tls.key && opts.tls.cert){
     opts.tls.type = 'tls'
-    server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)})
+    // server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)})
     server = tls.createServer(opts.tls,function(s){
       var nssServer = new nss.NsSocket(s,{type:'tcp4'}) // not sure about that
+      s.on('end',function(){console.log('end?')})
+      s.on('end',function(){console.log('end?')})
       self.initSocket(nssServer,cb)
     })
     server.listen(opts.port,opts.host)
@@ -83,6 +85,7 @@ p.listen = function() {
 }
 
 p.connect = function() {
+  debug('connect')
   var self = this
   var _args = [].slice.call(arguments)
   var args = [].slice.call(arguments)
@@ -147,25 +150,27 @@ p.connect = function() {
     })
   }
   client.on('error', function (err) {
+    debug('client error')
     if (opts.reconnect) {
       if (err.code === 'ECONNREFUSED') {
         self.emit('refused')
         debug('ECONNREFUSED')
         setTimeout(function () {
           self.emit('reconnecting')
-          self.connect.apply(self, args)
+          socketvat.prototype.connect.apply(self, _args)
         }, opts.reconnect)
       }
     }
   })
   function applyReconnect() {
+    debug('apply reconnect')
     client.once('close', function () {
       debug('socket closed')
       client.destroy()
       setTimeout(function () {
         debug('reconnecting')
         self.emit('reconnecting')
-        socketvat.prototype.connect.apply(self, args)
+        socketvat.prototype.connect.apply(self, _args)
       }, opts.reconnect)
     })   
   }
@@ -202,15 +207,28 @@ p.initSocket = function(s,cb) {
       delete subs[y]
     })
   }
-  s.on('error',function(err){
-    debug('socket-error',err)
-    s.destroy()
-    self.sockets.splice(self.sockets.indexOf(s),1)
-  })
-  s.on('close',function(){
+  function destroySocket() {
+    debug('destroy socket')
     unsub()
     s.destroy()
     self.sockets.splice(self.sockets.indexOf(s),1)
+  }
+  
+  s.on('error',function(err){
+    debug('socket-error',err)
+    destroySocket()
+  })
+  s.on('close',function(){
+    debug('socket-close')
+    destroySocket()
+  })
+  s.on('end',function(){
+    debug('socket-end')
+    destroySocket()
+  })
+  s.on('timeout',function(){
+    debug('socket-timeout')
+    destroySocket()
   })
   s.data(self.namespace+'::**',function(d){
     d = d || {}
