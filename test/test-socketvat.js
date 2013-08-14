@@ -339,22 +339,18 @@ ME['subscribe/unsubscribe'] = function(done){
   var p = common.plan(10,done)
   var port = ~~(Math.random()*50000)+10000
   var serverVat = sv()
-  var server = serverVat.listen(port,function(r){
-    var i = 0
-    var iv = setInterval(function(){serverVat.set('foo',i++)},100)
-  })
-
+  var foo = 111
+  serverVat.set('foo',foo)
+  var server = serverVat.listen(port)
   var clientVat = sv()
   clientVat.connect(port,function(r){
-    var j = 0
-    r.on('set foo',function(i){
-      j = i
-      r.off('set foo')
-      setTimeout(function(){
-        assert.equal(j,0)
-        done()
-      },300)
+    r.on('get foo',function(i){
+      r.off('get foo')
+      assert.equal(i,foo)
+      server.close()
+      done()
     })
+    r.get('foo')
   })
 }
 
@@ -368,24 +364,19 @@ ME.tls = function(done) {
              , ca   : fs.readFileSync(fixturesPath+'/ryans-csr.pem')
              }
 
-
+  var foo = 111
   var serverVat = sv()
-  var server = serverVat.listen(opts,function(r){
-    var i = 0
-    var iv = setInterval(function(){serverVat.set('foo',i++)},100)
-  })
-
+  serverVat.set('foo',foo)
+  var server = serverVat.listen(opts)
   var clientVat = sv()
   clientVat.connect(opts,function(r){
-    var j = 0
-    r.on('set foo',function(i){
-      j = i
-      r.off('set foo')
-      setTimeout(function(){
-        assert.equal(j,0)
-        done()
-      },300)
+    r.on('get foo',function(i){
+      r.off('get foo')
+      assert.equal(i,foo)
+      server.close()
+      done()
     })
+    r.get('foo')
   })
 }
 

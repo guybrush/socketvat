@@ -60,6 +60,8 @@ p.listen = function() {
   if (opts.port) opts.host = opts.host || '0.0.0.0'
   else opts.path = opts.host
 
+  debug('server> init server',opts)
+
   var self = this
   var server
   if (opts.path) {
@@ -70,22 +72,25 @@ p.listen = function() {
     opts.tls.type = 'tls'
     // server = nss.createServer(opts.tls,function(s){self.initSocket(s,cb)})
     server = tls.createServer(opts.tls,function(s){
+      debug('server> client connected, initing socket')
       var nssServer = new nss.NsSocket(s,{type:'tcp4'}) // not sure about that
-      s.on('end',function(){console.log('end?')})
-      s.on('end',function(){console.log('end?')})
       self.initSocket(nssServer,cb)
     })
     server.listen(opts.port,opts.host)
   }
   else {
-    server = nss.createServer(function(s){self.initSocket(s,cb)})
+    server = nss.createServer(function(s){
+      debug('server> client connected')
+      self.initSocket(s,cb)
+    })
+    debug('server> start server',opts)
     server.listen(opts.port,opts.host)
   }
   return server
 }
 
 p.connect = function() {
-  debug('connect')
+  debug('client> connecting')
   var self = this
   var _args = [].slice.call(arguments)
   var args = [].slice.call(arguments)
@@ -119,20 +124,22 @@ p.connect = function() {
       }
     }
   })
-  
+
   if (!opts.port && !opts.host)
     throw new Error('no port or path defined')
 
-  if (opts.port) opts.host = opts.host || '0.0.0.0'
+  if (opts.port) opts.host = opts.host || 'localhost'
   else opts.path = opts.host
+
+  debug('client> init client',opts)
 
   var self = this
   var client
   if (opts.path) {
     client = new nss.NsSocket()
+    if (opts.reconnect) applyReconnect()
     client.connect(opts.path,function(){
       self.initSocket(client,self.onConnect)
-      if (opts.reconnect) applyReconnect()
     })
   }
   else if (opts.tls.key && opts.tls.cert) {
@@ -144,41 +151,35 @@ p.connect = function() {
   }
   else {
     client = new nss.NsSocket()
+    if (opts.reconnect) applyReconnect()
+    debug('client> connecting',opts.port, opts.host)
     client.connect(opts.port, opts.host, function(){
+      debug('connected')
       self.initSocket(client,self.onConnect)
-      if (opts.reconnect) applyReconnect()
     })
   }
   client.on('error', function (err) {
-    debug('client error')
-    if (opts.reconnect) {
-      if (err.code === 'ECONNREFUSED') {
-        self.emit('refused')
-        debug('ECONNREFUSED')
-        setTimeout(function () {
-          self.emit('reconnecting')
-          socketvat.prototype.connect.apply(self, _args)
-        }, opts.reconnect)
-      }
-    }
+    debug('client error',err.code,err)
+    client.end()
+    client.destroy()
   })
   function applyReconnect() {
-    debug('apply reconnect')
+    debug('client> apply reconnect')
     client.once('close', function () {
-      debug('socket closed')
+      debug('client> socket closed')
       client.destroy()
       setTimeout(function () {
-        debug('reconnecting')
+        debug('client> reconnecting')
         self.emit('reconnecting')
         socketvat.prototype.connect.apply(self, _args)
       }, opts.reconnect)
-    })   
+    })
   }
   return client
 }
 
 p.initSocket = function(s,cb) {
-  debug('init socket')
+  debug('server> initing socket')
   var self = this
   this.sockets.push(s)
   var subs = {}
@@ -213,7 +214,7 @@ p.initSocket = function(s,cb) {
     s.destroy()
     self.sockets.splice(self.sockets.indexOf(s),1)
   }
-  
+
   s.on('error',function(err){
     debug('socket-error',err)
     destroySocket()
@@ -351,3 +352,4 @@ socketvat.connect = function(opts,cb){
   var s = socketvat()
   return socketvat.prototype.connect.call(s,opts,cb)
 }
+
