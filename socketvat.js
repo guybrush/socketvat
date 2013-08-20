@@ -47,7 +47,7 @@ p.listen = function() {
             case 'sessionIdContext' :
               opts.tls[k] = x[k]; break;
             default :
-              console.error(new Error('invalid option "'+k+'"'))
+              console.error(new Error('invalid option "'+k+'"').stack)
           }
         })
       }
@@ -118,7 +118,7 @@ p.connect = function() {
             case 'socket' :
               opts.tls[k] = x[k]; break;
             default :
-              console.error(new Error('invalid option "'+k+'"'))
+              console.error(new Error('invalid option "'+k+'"').stack)
           }
         })
       }
@@ -212,7 +212,8 @@ p.initSocket = function(s,cb) {
     debug('destroy socket')
     unsub()
     s.destroy()
-    self.sockets.splice(self.sockets.indexOf(s),1)
+    var idx = self.sockets.indexOf(s)
+    if (!!~idx) self.sockets.splice(idx,1)
   }
 
   s.on('error',function(err){
@@ -253,13 +254,14 @@ p.initSocket = function(s,cb) {
           self.once(args[0],function(){
             var args = [].slice.call(arguments)
             var split = this.event.split(' ')
-            // if (split[0] == 'keys') args[args.length-2] = args[args.length-2].source
+            if (split[0] == 'keys' && args[args.length-2] instanceof RegExp) 
+              args[args.length-2] = args[args.length-2].source
             var event = [self.namespace,'event'].concat(split)
             s.send(event,{args:args})
-          })
-          break
-        case 'offAny':
-          unsub('**')
+          })                      
+          break                                      
+        case 'offAny':                                       
+          unsub('**')                  
           break
         case 'removeListener':
         case 'off':
@@ -267,20 +269,11 @@ p.initSocket = function(s,cb) {
           args[0] = args[0].split('::').join(' ')
           unsub(args[0])
           break
-        case 'keys':
-          var regex
-          try {
-            regex = (new RegExp(args[0]))
-          } catch (e) {
-            console.error(e)
-          }
-          self.keys(regex)
-          break
         default:
           if (ev.prototype[method] && typeof ev.prototype[method] == 'function')
             self[method].apply(self,args)
           else
-            console.log('unknown method',method)
+            console.error(new Error('unknown method '+method).stack)
       }
     }
   })

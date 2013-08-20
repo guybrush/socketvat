@@ -52,8 +52,8 @@ var remoteSamples =
                                ,['set','one',1]
                                ,['set','two',2]
                                ,['keys',/one|two/]
-                               ,['keys','one|two']]          , events:[['keys',/one|two/,['one','two']]
-                                                                      ,['keys',/one|two/,['one','two']]] }
+                               ,['keys','one|two']]          , events:[['keys','one|two',['one','two']]
+                                                                      ,['keys','one|two',['one','two']]] }
 // not sure about move..
 // , { name:'move'      , methods:[['foo','bar']
 //                                ,['move','foo',common.vat]] , events:[['move','foo',common.vat]
@@ -227,38 +227,28 @@ remoteSamples.forEach(function(x){
         p.todo = p.todo+4
         var currE = e.shift()
         common.clientRemotes[0].remote.once(currE,function(){
-          // this is because of eventvat.keys(regexp)
-          // if (e[e.length-2] instanceof RegExp) e[e.length-2] = e[e.length-2].source
-
           var args = [].slice.call(arguments)
-          // this is because eventvat.swap()
-          if (args[args.length-1] === null)
-            args.pop()
+          if (args[args.length-1] === null) args.pop() // eventvat.swap()
           assert.deepEqual(args,e)
           p.did()
         })
         common.serverRemotes[0].remote.once(currE,function(){
-          // this is because of eventvat.keys(regexp)
-          // if (e[e.length-2] instanceof RegExp) e[e.length-2] = e[e.length-2].source
-
           var args = [].slice.call(arguments)
-          // this is because eventvat.swap()
-          if (args[args.length-1] === null)
-            args.pop()
+          if (args[args.length-1] === null) args.pop() // eventvat.swap()
           assert.deepEqual(args,e)
           p.did()
         })
         common.clientVat.once(currE,function(){
           var args = [].slice.call(arguments)
-          // this is because eventvat.swap()
-          if (args[args.length-1] === undefined) args.pop()
+          if (args[args.length-1] === undefined) args.pop() // eventvat.swap()
+          if (currE == 'keys') args[0] = args[0].source
           assert.deepEqual(args,e)
           p.did()
         })
         common.serverVat.once(currE,function(){
           var args = [].slice.call(arguments)
-          // this is because eventvat.swap()
-          if (args[args.length-1] === undefined) args.pop()
+          if (args[args.length-1] === undefined) args.pop() // eventvat.swap()
+          if (currE == 'keys') args[0] = args[0].source
           assert.deepEqual(args,e)
           p.did()
         })
